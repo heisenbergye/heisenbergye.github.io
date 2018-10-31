@@ -54,7 +54,7 @@
         <div class="content markdown">
             <h4 id="一、-Linkerd-2-0-介绍"><a href="#一、-Linkerd-2-0-介绍" class="headerlink" title="一、 Linkerd 2.0 介绍"></a>一、 Linkerd 2.0 介绍</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; 首先我们来看什么是 Service Mesh。根据Linkerd CEO William Morgan定义，“Service Mesh是用于处理服务间通信的基础设施层，用于在云原生应用复杂的服务拓扑中实现可靠的请求传递。在实践中，Service Mesh通常是一组与应用一起部署，但对应用透明的轻量级网络代理。”我们可以将其比作是用于处理服务间通信的专用基础设施层，负责服务之间的网络调用、限流、熔断和监控。但与传统基础设施层不同之处在于，它形成了一个分布式的互连代理网络，以sidecar形式部署在服务两侧，服务对于代理无感知，且服务间所有通信都由代理进行路由。<br>&nbsp;&nbsp;&nbsp;&nbsp; 如图中绿色方块为应用服务，蓝色方块为 Sidecar Proxy，应用服务之间通过 Sidecar Proxy 进行通信，整个服务通信形成图中的蓝色网络连线，图中所有蓝色部分就形成了 Service Mesh。<br><img src="http://phbh9tbd6.bkt.clouddn.com/servicemesh1.png" alt="avatar"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; 如下图所示，Service Mesh中分为控制平面（Control plane）和数据平台（Data plane），类似结构可以和SDN（软件定义网络）对比。Control plane定义服务发现、路由、流量控制等策略。这些策略可以是全局的，也可以是限定的。Data plane负责在所有服务中通过sidecar代理进行服务通信，并应用和执行策略。<br><img src="http://phbh9tbd6.bkt.clouddn.com/servicemesh.jpg" alt="avatar"></p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp; 当下微服务框架如Dubbo、Spring越来越流行，虽然技术也很成熟了，但是一个公司的不同应用系统或者一个应用系统中不同组件通常会使用多种技术栈，所以研发运营的技术成本较高，打通技术栈的服务治理显得越发重要。也布直道谁硕得“没有什么问题不是抽象出一层解决不了的。如果有，那就再抽象一层。”，如上所说Service Mesh就是抽象出用于处理服务间通信的专用基础设施层，在不侵入应用代码的前提下，提供服务治理所需的服务注册发现、负载均衡、熔断降级、监控等功能，从而提升开发运维和服务间调用的效率。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 当下微服务框架如Dubbo、Spring越来越流行，虽然技术也很成熟了，但是一个公司的不同应用系统或者一个应用系统中不同组件通常会使用多种技术栈，所以研发运营的技术成本较高，打通技术栈的服务治理显得越发重要。也不知道谁说的“没有什么问题不是抽象出一层解决不了的。如果有，那就再抽象一层。”，如上所说Service Mesh就是抽象出用于处理服务间通信的专用基础设施层，在不侵入应用代码的前提下，提供服务治理所需的服务注册发现、负载均衡、熔断降级、监控等功能，从而提升开发运维和服务间调用的效率。</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd是Service Mesh（服务网格）的一种实现方式，核心是一个高性能透明代理，支持Kubernetes等多种框架。Linkerd通过提供自动可观察性、可靠性和运行时诊断，而无需更改配置或代码，使得服务运行更加简单和安全。Linkerd基于Netty和Finagle构建，Finagle是经过生产测试的RPC框架，采用于Twitter、Pinterest、Tumblr、PagerDuty等高流量公司。目前2.0 版本正式GA已经一月有余，本次除了带来了性能、资源消耗和易用性方面的显着改进，更重大的变革是将目光从集群范围的 Service Mesh 转到了可组合的 Service Sidecar。主要更新内容如下：</p>
 <ol>
 <li>独立的“Service Sidecar”设计，无需集群范围的安装即可增强单一服务。</li>
@@ -73,7 +73,17 @@
 </ul>
 <p><img src="http://phbh9tbd6.bkt.clouddn.com/control-plane.png" alt="avatar"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; 数据平面由轻量代理组成，代理以sidecar容器的形式部署在每个服务实例旁。为了添加一个服务到Linkerd服务网格，运行该服务的pod必须被注入代理后重新部署，通过代理透明地汇集来自每个实例的流量。这些代理透明的拦截pod之间的通信，可对流量进行监测和加密（TLS），也可以执行相关的策略拒绝请求。</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp; 代理，基于Rust和Go编写的高性能轻量级透明代理</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 代理，基于Rust和Go编写的高性能轻量级透明代理，安装在每个服务的Pod中组成数据平面的一部分。代理接收所有进入服务的流量并拦截所有出流量，通过initcontainer配置的iptables规则转发流量。正因为这样，代理可以被添加到正在运行的服务中而代码不需要做任何修改。<br>代理的特性包括：</p>
+<ul>
+<li>透明的，无需任何配置的代理 HTTP, HTTP/2和几乎所有TCP协议的</li>
+<li>自动的针对HTTP和TCP流量暴露Prometheus Metrics</li>
+<li>透明的，无需任何配置的 WebSocket 代理</li>
+<li>自动的延迟感知，7层负载均衡</li>
+<li>自动的4层负载均衡</li>
+<li>自动加密(TLS)</li>
+<li>按需跟踪服务流量和诊断</li>
+<li>代理支持DNS服务发现和gRPC框架</li>
+</ul>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd CLI运行在本地，用于与控制平面和数据平面交互，也可以用来查看实时状态、debug，安装和升级。</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd Dashboard提供了一个高质量的前端界面实时展现你的服务运行状态，他能用来查看“黄金级别”的metrics（请求成功率、请求响应时间和延迟），视图化服务之间的依赖关系，查看特定服务路由的健康状况。</p>
 <h4 id="二、-安装Linkerd"><a href="#二、-安装Linkerd" class="headerlink" title="二、 安装Linkerd"></a>二、 安装Linkerd</h4><p>本文搭建环境为kubernetes 1.11.2</p>
