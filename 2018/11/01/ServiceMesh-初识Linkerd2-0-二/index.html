@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; 上一节说到在Kubernetes中，Linkerd在原服务的pod中的运行一个sidecar容器作为透明代理，可以理解为和原服务容器共享存储、网络等,"> 
+    <meta name="description" content="Heisenbergye,&amp;#160; &amp;#160; &amp;#160; 小店从今儿起就算开张了，感谢光临，还请老板们多多关照，这后台流量数据就靠大家给捧场了。作为开篇嘛，选了当前较热的歌曲，李荣浩《年少有为》。&amp;#160; &amp;#,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -54,8 +54,8 @@
         <div class="content markdown">
             <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节说到在Kubernetes中，Linkerd在原服务的pod中的运行一个sidecar容器作为透明代理，可以理解为和原服务容器共享存储、网络等资源。代理负载接管进出服务容器的所有流量，收集遥测数据并执行相关策略。<br>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd2.0 给应用 Pod 注入的配置主要包括：</p>
 <ol>
-<li>InitContainer: linkerd-init，用于给Sidecar容器做初始化，设置iptables端口转发</li>
-<li>SideCarContainer: linkerd-proxy，运行透明代理<br>下面我们来依次分析这两个容器。</li>
+<li>InitContainer: linkerd-init，用于给Sidecar容器做初始化，设置iptables端口转发。</li>
+<li>SideCarContainer: linkerd-proxy，运行透明代理。<br>下面我们来依次分析这两个容器。</li>
 </ol>
 <h4 id="linkerd-init解析："><a href="#linkerd-init解析：" class="headerlink" title="linkerd-init解析："></a>linkerd-init解析：</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd2.0在Pod中注入的Init容器名为linkerd-init，该容器存在的意义就是让linkerd-proxy容器可以拦截所有的进出Pod的流量，即将入站流量重定向到Sidecar，再拦截应用容器的出站流量经过Sidecar处理后再出站。<br>在执行linkerd inject注入完成后的 YAML 文件和原应用YAML对比，看到了Init容器的启动参数：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">--incoming-proxy-port 4143 --outgoing-proxy-port 4140 --proxy-uid 2102 --inbound-ports-to-ignore 4190,4191</span><br></pre></td></tr></table></figure></p>
 <p><img src="http://phbh9tbd6.bkt.clouddn.com/initproxy.jpg" alt="avatar"></p>
@@ -80,7 +80,7 @@
             
         </div>
         
-    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="ae2d2a9efc555959ff88" data-cs="c4d007d4779e965a2918d9d8a89383cbc72ac684" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
 
 
     </div>
