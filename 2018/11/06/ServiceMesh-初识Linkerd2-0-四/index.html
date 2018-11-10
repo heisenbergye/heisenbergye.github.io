@@ -11,7 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,一、 Linkerd 2.0 介绍&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; 首先我们来看什么是 Service Mesh。根据Linkerd CEO William Morgan定义，“Se,"> 
+    <meta name="description" content="Heisenbergye,&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用，并且通过demo来讲解如何Debug。
+2.Dashboard的功能,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -52,7 +53,7 @@
 
         </div>
         <div class="content markdown">
-            <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用，并且通过演示示例来讲解如何Debug。</p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用，并且通过demo来讲解如何Debug。</p>
 <h4 id="2-Dashboard的功能介绍："><a href="#2-Dashboard的功能介绍：" class="headerlink" title="2.Dashboard的功能介绍："></a>2.Dashboard的功能介绍：</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; 首页中我们可以看到Kubernetes集群中所有的namespace，启用了linkerd的namespace后面会显示meshed，如Linkerd本身、官网emoji的demo和先前做自动注入sidecar实验的namespace:enable。<br><img src="http://phbh9tbd6.bkt.clouddn.com/dashboard1.png" alt="avatar"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; 点开emojivoto和linkerd的namespace可以看到Deployment、Pod和Authorities（访问的Service、ingress等），被meshed实例数、成功率、每秒请求数量、延时（P99：完成最快的99%的请求所花费的平均时间，换言之99%的请求要比给定的延迟时间要快，只允许1%的请求比指定的延迟时间慢）、TLS（加密流量占比）等<br><img src="http://phbh9tbd6.bkt.clouddn.com/dashboard2.png" alt="avatar"></p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp; 这界面可以说是非常的整洁美观，那我们肯定最关心的是为什么请求成功率低于100%，点击Deployment中的web，我们可以看到流量拓扑，其中包括每秒请求数量、P99延时；下方为出入deployment/web的流量的实时列表，其中包括流量方向、请求方式、路径、最好/最差/最近一次延迟时间、处理请求成功率、tap超链接；<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic1.png" alt="avatar"><br>再往下为进出流量的详细统计，，成功率，请求率，P50/P95/P99延时、加密流量占比；deployment/web中的pod的流量信息<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic2.png" alt="avatar"></p>
