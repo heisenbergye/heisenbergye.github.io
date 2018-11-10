@@ -11,8 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用。
-2.Dashboard的功能介绍：&amp;nbsp;&amp;nbsp;&amp;nbs,"> 
+    <meta name="description" content="Heisenbergye,一、 Linkerd 2.0 介绍&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; 首先我们来看什么是 Service Mesh。根据Linkerd CEO William Morgan定义，“Se,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -53,8 +52,25 @@
 
         </div>
         <div class="content markdown">
-            <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用。</p>
-<h4 id="2-Dashboard的功能介绍："><a href="#2-Dashboard的功能介绍：" class="headerlink" title="2.Dashboard的功能介绍："></a>2.Dashboard的功能介绍：</h4><p>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+            <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节我们介绍了CLI的使用和两个特性，本节我们来看下Dashboard的使用，并且通过演示示例来讲解如何Debug。</p>
+<h4 id="2-Dashboard的功能介绍："><a href="#2-Dashboard的功能介绍：" class="headerlink" title="2.Dashboard的功能介绍："></a>2.Dashboard的功能介绍：</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; 首页中我们可以看到Kubernetes集群中所有的namespace，启用了linkerd的namespace后面会显示meshed，如Linkerd本身、官网emoji的demo和先前做自动注入sidecar实验的namespace:enable。<br><img src="http://phbh9tbd6.bkt.clouddn.com/dashboard1.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 点开emojivoto和linkerd的namespace可以看到Deployment、Pod和Authorities（访问的Service、ingress等），被meshed实例数、成功率、每秒请求数量、延时（P99：完成最快的99%的请求所花费的平均时间，换言之99%的请求要比给定的延迟时间要快，只允许1%的请求比指定的延迟时间慢）、TLS（加密流量占比）等<br><img src="http://phbh9tbd6.bkt.clouddn.com/dashboard2.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这界面可以说是非常的整洁美观，那我们肯定最关心的是为什么请求成功率低于100%，点击Deployment中的web，我们可以看到流量拓扑，其中包括每秒请求数量、P99延时；下方为出入deployment/web的流量的实时列表，其中包括流量方向、请求方式、路径、最好/最差/最近一次延迟时间、处理请求成功率、tap超链接；<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic1.png" alt="avatar"><br>再往下为进出流量的详细统计，，成功率，请求率，P50/P95/P99延时、加密流量占比；deployment/web中的pod的流量信息<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic2.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 那我们来Debug下应用故障，可以看到deployment/web的流量来自deployment/vote-bot，web的流量发往deployment/emoji和voting，他俩是web的依赖。emoji处理所有来自web的流量都是成功的，voting处理请求有失败的情况，所以voting上有任何一个请求处理失败都会是导致web返回错误的原因。我们可以看到此时有两处请求显示故障，第一个GET请求来自vote-bot要访问路径/api/vote成功率仅75.76%；第二个则是web发往voting到VotePoop的POST请求，没有一个处理成功。这线索就很明显了，/api/vote是进入web的请求，而VotePoop是web发往依赖voting的请求，查看这两个路径的请求处理明细。<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic8.png" alt="avatar"><br>我们点击/api/vote后的tap超链接图标，他会自动生成实时tap查询的command，界面上会实时打印出每个请求的处理结果，可以轻松找到哪些请求成功哪些失败<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic7-1.png" alt="avatar"><br>点击一个失败请求最前面“向下的箭头”查看明细<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic9.png" alt="avatar"><br>同理查看到VotePoop的请求，可以看到请求发送都是成功的，但是返回的gRPC状态码为unknown，说明有错误。<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic10.png" alt="avatar"><br>所以只要调试voting容器修复VotePoop，整个应用就能恢复健康。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 点击Service Mesh可以看到控制平面组件的健康状态，数据平面：启用的namespace和被注入代理的pod数量<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic3.png" alt="avatar"><br>点击namespace:emojivoto可以看到整个应用的拓扑结构和列表明细，和上述的一样，不做赘述<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic4.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 点击Resources可以看到所有资源列表svc、deployment、namespace、pod、rc，这里可以看到集群中所有资源的监控情况<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic5.png" alt="avatar"></p>
+<p>上&nbsp;&nbsp;&nbsp;&nbsp; 面我们通过点击tap链接自动生成实时tap信息，下面我们自己选择试一下Linkerd2在流量监测的使用上有多么方便。先来个最简单的，为了和上面对比，我们就查看namespace:emojivoto中web的所以请求，可以看到从vote-bot发来的HTTP GET请求、路径、延迟、状态，发往emoji和voting的POST请求、路径、延迟、状态。<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic6.png" alt="avatar"><br>打开高级选项缩小下范围，我们只查看发往voting的请求，同时限定每秒最大请求数为3<br><img src="http://phbh9tbd6.bkt.clouddn.com/traffic6-3.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 最后我们看下Grafana中的内容。一共十张面板，三张是Prometheus和Grafana自己的监控不做描述，我们着重看几张面板。<br><img src="http://phbh9tbd6.bkt.clouddn.com/grafanalist.png" alt="avatar"><br>每张图表默认显示最近5分钟的变化，刷新频率为5s。首先我们看下Linkerd Health面板，主要包含控制平面和数据平面的遥测数据、流量数据、TCP Metrics，比Dashboard要更加详细<br><img src="http://phbh9tbd6.bkt.clouddn.com/LinkerdH1.png" alt="avatar"><br><img src="http://phbh9tbd6.bkt.clouddn.com/LinkerdH2.png" alt="avatar"></p>
+<p>Linkerd Deployment面板展现成功率、请求速率、出站/入站流量来自哪里、流量信息、TCP连接等<br><img src="http://phbh9tbd6.bkt.clouddn.com/LinkerdDeployment1.png" alt="avatar"><br><img src="http://phbh9tbd6.bkt.clouddn.com/LinkerdDeployment2.png" alt="avatar"></p>
+<p>Linkerd Pod，Linkerd Authority/Service面板其实和Deployment面板类似，<br><img src="http://phbh9tbd6.bkt.clouddn.com/LinkerdPod.png" alt="avatar"><br><img src="http://phbh9tbd6.bkt.clouddn.com/Linkerdsvc.png" alt="avatar"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 这是本阶段关于Linkerd2的最后一篇文章了，之前有些朋友问我Linkerd2有没有像Istio一样的流控等功能。嗯，很显然，目前没有，可以通过四篇讲解看出它主要的功能在应用监控和故障诊断上，虽然功能没有Istio多，但是简单啊，而且有大公司实践为其背书。当然也可以将Linkerd2.0对比像skywalking、pinpoint、zipkin你也会发现注入透明代理有多方便，界面简洁，Debug效率也高。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 最后引用目前使用Linkerd2.0的两家公司的切实感受介绍本阶段的学习。</p>
+<blockquote>
+<p>“在Linkerd 2.0之前，对于服务我所拥有的只是我的公共API的统计数据。现在，我可以在一个非常精细的层面上看到每项服务的表现，“Studyo的首席技术官兼联合创始人Pascal Bourque说道，Studyo为学校设计的任务和项目管理软件。“它可以无痛安装事实甚至更好。“</p>
+</blockquote>
+<blockquote>
+<p>“在我们重新部署一项关键服务并转向Linkerd 2.0来诊断问题后，我们遇到了不稳定和延迟的问题，”专注于化妆品的社交商业公司Hush的CTO和联合创始人Will King说。“能够看到实时的请求和响应非常有用，远远超出我们的预期。我们现在使用Linkerd 2.0 tap进行所有容器服务调试。“</p>
+</blockquote>
 
             <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
             <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
