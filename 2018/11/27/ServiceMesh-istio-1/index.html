@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念,"> 
+    <meta name="description" content="Heisenbergye,之前我们讲了 Linkerd2 ，也了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -52,8 +52,8 @@
 
         </div>
         <div class="content markdown">
-            <p>之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念、功能、安装以及演示sidecar的注入。</p>
-<h4 id="什么是-Istio"><a href="#什么是-Istio" class="headerlink" title="什么是 Istio"></a>什么是 Istio</h4><p>istio是一个用来连接、管理和加密微服务（流量）的开放平台。可以让你在不修改微服务源代码的情况之下，很轻松地给微服务加上诸如负载均衡、服务间认证、监控等等的功能。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">istio, an open platform to connect, manage, and secure microservices</span><br></pre></td></tr></table></figure></p>
+            <p>之前我们讲了 Linkerd2 ，也了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念、功能、安装以及演示sidecar的注入。</p>
+<h3 id="什么是-Istio"><a href="#什么是-Istio" class="headerlink" title="什么是 Istio"></a>什么是 Istio</h3><p>istio是一个用来连接、管理和加密微服务（流量）的开放平台。可以让你在不修改微服务源代码的情况之下，很轻松地给微服务加上诸如负载均衡、服务间认证、监控等等的功能。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">istio, an open platform to connect, manage, and secure microservices</span><br></pre></td></tr></table></figure></p>
 <p>想要让服务支持 Istio，只需要在您的环境中部署一个特殊的 sidecar 代理，使用 Istio 控制平面功能配置和管理代理，拦截微服务之间的所有网络通信：</p>
 <ul>
 <li>HTTP、gRPC、WebSocket 和 TCP 流量的自动负载均衡。</li>
