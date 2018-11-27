@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="" class="loading">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heisenbergye的博客</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate">
+    <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
+    <meta name="description" content="Heisenbergye,之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念,"> 
+    <meta name="author" content="Zhan Ye"> 
+    <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+    <link rel="stylesheet" href="/css/diaspora.css">
+</head>
+</html>
+<body class="loading">
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">ServiceMesh-istio(一)</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">ServiceMesh-istio(一)</h1>
+        <div class="stuff">
+            <span>十一月 27, 2018</span>
+            
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Istio/">Istio</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Kubernetes/">Kubernetes</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Service-Mesh/">Service Mesh</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念、功能、安装以及演示sidecar的注入。</p>
+<h4 id="什么是-Istio"><a href="#什么是-Istio" class="headerlink" title="什么是 Istio"></a>什么是 Istio</h4><p>istio是一个用来连接、管理和加密微服务（流量）的开放平台。可以让你在不修改微服务源代码的情况之下，很轻松地给微服务加上诸如负载均衡、服务间认证、监控等等的功能。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">istio, an open platform to connect, manage, and secure microservices</span><br></pre></td></tr></table></figure></p>
+<p>想要让服务支持 Istio，只需要在您的环境中部署一个特殊的 sidecar 代理，使用 Istio 控制平面功能配置和管理代理，拦截微服务之间的所有网络通信：</p>
+<ul>
+<li>HTTP、gRPC、WebSocket 和 TCP 流量的自动负载均衡。</li>
+<li>通过丰富的路由规则、重试、故障转移和故障注入，可以对流量行为进行细粒度控制。</li>
+<li>可插入的策略层和配置 API，支持访问控制、速率限制和配额。</li>
+<li>对出入集群入口和出口中所有流量的自动度量指标、日志记录和跟踪。</li>
+<li>通过强大的基于身份的验证和授权，在集群中实现安全的服务间通信。</li>
+</ul>
+<h3 id="Istio-的架构"><a href="#Istio-的架构" class="headerlink" title="Istio 的架构"></a>Istio 的架构</h3><p>Istio 的架构和 Linkerd2 类似，逻辑上分为数据平面和控制平面：</p>
+<ul>
+<li>数据平面的职责是处理网格内部服务之间的通信，并负责服务发现、负载均衡、流量管理、健康检查等功能。由所有以 sidecar 模式部署的智能代理 Envoy 所组成的，作为每个pod所有流量的代理，可以调节和控制微服务及 Mixer 之间所有的网络通信。</li>
+<li>控制平面的职责是管理和配置 Sidecar 代理以实施策略并收集遥测。负责管理和配置代理来路由流量，以及配置 Mixer 以实施策略和收集遥测数据。有三个组件：Pilot、Mixer 和 Citadel。<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxn3reqp01j312y0u0wj6.jpg" alt=""></li>
+<li><p>Envoy 被部署为sidecar，和应用容器被部署在同一个pod中，代理应用所有的请求，能够完成动态服务发现、负载均衡、TLS终止、HTTP/2 &amp; gRPC 代理、熔断、健康检查、基于百分比流量拆分的灰度发布、故障注入、丰富的度量指标。<br>envoy 代理将大量关于流量行为的信号作为属性提取出来，而这些属性又可以在 Mixer 中用于执行策略决策，并发送给监控系统，以提供整个网格行为的信息。</p>
+</li>
+<li><p>Mixer 是一个平台无关的组件，负责在 istio 上执行访问控制和使用策略，同时从envoy和其他服务收集监控数据（遥测），将收集到的信息传给用户可以自定义的后端进行处理。</p>
+</li>
+<li><p>Pilot 为 Envoy 提供服务发现、智能路由（如:A/B测试、金丝雀部署）和弹性流量管理功能（如超时、重试、熔断）。它负责将控制流量行为的高级路由规则转化成特定的 envoy 的配置，并在运行时将他们传播到sidecar。</p>
+</li>
+<li><p>Citadel 通过内置身份和凭证管理可以提供强大的服务间和终端用户身份验证。同时可以将未加密的流量加密，并支持RBAC，以控制谁可以访问您的服务。</p>
+</li>
+</ul>
+<h3 id="Istio-的核心功能"><a href="#Istio-的核心功能" class="headerlink" title="Istio 的核心功能"></a>Istio 的核心功能</h3><ul>
+<li>流量管理（Traffic Management）：控制服务之间的流量和API调用的流向，使得调用更可靠，并使网络在恶劣情况下更加健壮。</li>
+<li>可观察性：了解服务之间的依赖关系，以及它们之间流量的本质和流向，从而提供快速识别问题的能力。</li>
+<li>策略配置（Policy Enforcement）：将组织策略应用于服务之间的互动，确保访问策略得以执行，资源在消费者之间良好分配。策略的更改是通过配置网格而不是修改应用程序代码。</li>
+<li>遥测（监控Telemetry）：</li>
+<li>服务的身份认证和安全（Service Identity and Security）：为网格中的服务提供可验证身份，并提供保护服务流量的能力，使其可以在不同可信度的网络上流转。</li>
+<li>平台支持：Istio旨在在各种环境中运行，包括跨云、Kubernetes、Mesos等。最初专注于Kubernetes，但很快将支持其他环境。</li>
+<li>集成和定制：策略执行组件可以扩展和定制，以便与现有的ACL、日志、监控、配额、审核等解决方案集成。</li>
+</ul>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><h4 id="下载-Istio"><a href="#下载-Istio" class="headerlink" title="下载 Istio"></a>下载 Istio</h4><p>进入 <a href="https://github.com/istio/istio/releases" target="_blank" rel="noopener">Istio release</a> 页面（说明下本文环境已经做了很久了，现在最新版本已经到1.0.4了）<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ wget https://github.com/istio/istio/releases/download/1.0.2/istio-1.0.2-linux.tar.gz</span><br><span class="line">$ tar zxf istio-1.0.2-linux.tar.gz</span><br><span class="line">$ cp istio-1.0.2/bin/istioctl /usr/local/bin/</span><br><span class="line">$ cd istio-1.0.2</span><br></pre></td></tr></table></figure></p>
+<p>安装目录中包含：</p>
+<ul>
+<li>install/ 目录中包含了 Kubernetes 安装所需的 .yaml 文件</li>
+<li>samples/ 目录中是示例应用</li>
+<li>istioctl 客户端文件保存在 bin/ 目录之中。istioctl 的功能是手工进行 Envoy Sidecar 的注入，以及对路由规则、策略的管理</li>
+<li>istio.VERSION 配置文件</li>
+</ul>
+<h4 id="Istio-安装"><a href="#Istio-安装" class="headerlink" title="Istio 安装"></a>Istio 安装</h4><p>在安装 Istio 之前要确保你已经部署了 Kubernetes 集群（ 版本要求 v1.9 及以上 ）并配置好本地的 kubectl 客户端，如果想用 Helm 部署 istio 还需要配置好 helm 客户端。当然，你也可以使用 ansible 将 Istio 部署到 Openshift 上。</p>
+<ol>
+<li><p>使用 kubectl 安装 istio</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl create -f install/kubernetes/istio-demo.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装包内的 install/kubernetes/helm 目录中包含了 Istio 的 Chart，官方提供了两种方法：可以使用 helm template 生成 istio.yaml 然后再安装。也可以通过 Tiller 使用 helm install 直接安装，但这里由于网络受限一直也没这么做过，就不讲解了。</p>
+</li>
+</ol>
+<ul>
+<li>使用 helm template 安装 istio<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 将 Istio 的核心组件呈现为名为 istio.yaml 的 Kubernetes 清单文件：</span><br><span class="line">$ helm template install/kubernetes/helm/istio --name istio --namespace istio-system &gt; istio.yaml</span><br><span class="line"></span><br><span class="line"># 通过清单文件安装组件</span><br><span class="line">$ kubectl create namespace istio-system</span><br><span class="line">$ kubectl create -f istio.yaml</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>Istio 配备了一组丰富而强大的功能，但你可能只需要这些功能的一部分。例如，你可能只对安装 Istio 的流量管理所需的最小集合感兴趣。</p>
+<ul>
+<li>使用 helm template 最小化安装 istio<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"># 生成只使用 Istio 的流量管理功能的 Kubernetes 清单文件：</span><br><span class="line">$ helm template install/kubernetes/helm/istio --name istio --namespace istio-system \</span><br><span class="line">  --set ingress.enabled=false \</span><br><span class="line">  --set gateways.istio-ingressgateway.enabled=false \</span><br><span class="line">  --set gateways.istio-egressgateway.enabled=false \</span><br><span class="line">  --set galley.enabled=false \</span><br><span class="line">  --set sidecarInjectorWebhook.enabled=false \</span><br><span class="line">  --set mixer.enabled=false \</span><br><span class="line">  --set prometheus.enabled=false \</span><br><span class="line">  --set global.proxy.envoyStatsd.enabled=false &gt; istio-mini.yaml</span><br><span class="line"></span><br><span class="line"># 通过清单文件安装组件</span><br><span class="line">$ kubectl create namespace istio-system</span><br><span class="line">$ kubectl create -f istio-mini.yaml</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>Istio 会被安装到 istio-system 命名空间下，并且能够对所有其他命名空间的服务进行管理。如下图所示，其中 istio-cleanup-secrets 和 istio-grafana-post-install 都是 job，istio-cleanup-secrets 用于清理过去的 Istio 遗留下来的 CA 部署（包括 sa、deploy 以及 svc 三个对象; istio-grafana-post-install 用于配置 Grafana。<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxmpt0p2yuj317g0riwmt.jpg" alt=""></p>
+<p>等所有 Pod 启动后，可以通过 NodePort、Ingress 或者 kubectl proxy 来访问Prometheus、Grafana、Servicegraph 和 Jaeger服务。本文中我使用 Ingress 的方式暴露这四个服务。</p>
+<p>Prometheus、Grafana、Servicegraph 和 Jaeger服务的 Ingress 文件如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">[root@lab01 ~]# cat istio-ingress.yaml</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: istio-system</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: prometheus.istio.io</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: prometheus</span><br><span class="line">          servicePort: 9090</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: grafana</span><br><span class="line">  namespace: istio-system</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: grafana.istio.io</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: grafana</span><br><span class="line">          servicePort: 3000</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: servicegraph</span><br><span class="line">  namespace: istio-system</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: servicegraph.istio.io</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: servicegraph</span><br><span class="line">          servicePort: 8088</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: tracing</span><br><span class="line">  namespace: istio-system</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: tracing.istio.io</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: tracing</span><br><span class="line">          servicePort: 80</span><br></pre></td></tr></table></figure></p>
+<p>创建 Ingress<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl create -f istio-ingress.yaml</span><br></pre></td></tr></table></figure></p>
+<p>浏览器所在主机修改hosts文件，添加host和ingress controller对应主机<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">172.xx.xx.229  tracing.istio.io prometheus.istio.io grafana.istio.io servicegraph.istio.io</span><br></pre></td></tr></table></figure></p>
+<h3 id="演示示例"><a href="#演示示例" class="headerlink" title="演示示例"></a>演示示例</h3><ol>
+<li><p>手动注入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 使用集群内置配置将 Sidecar 注入到 Deployment 中，然后再创建带有代理的应用：</span><br><span class="line">istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml | kubectl apply -f -</span><br><span class="line"></span><br><span class="line"># 给应用定义 Ingress gateway：</span><br><span class="line">kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>自动注入，原理和Linkerd2类似的，下次我们详细再说</p>
+</li>
+<li><p>访问测试前，我们先找到 ingressgateway 所在节点和 NodePort</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">export GATEWAY_URL=$(kubectl -n istio-system get po -l istio=ingressgateway -o go-template=&apos;&#123;&#123;range .items&#125;&#125;&#123;&#123;.status.hostIP&#125;&#125;&#123;&#123;end&#125;&#125;&apos;)</span><br><span class="line">export HTTP2_PORT=$(kubectl -n istio-system get svc istio-ingressgateway -o go-template=&apos;&#123;&#123;range .spec.ports&#125;&#125;&#123;&#123;if eq .name &quot;http2&quot;&#125;&#125;&#123;&#123;.nodePort&#125;&#125;&#123;&#123;end&#125;&#125;&#123;&#123;end&#125;&#125;&apos;)</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>通过 ingressgateway 访问测试<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn3as5bzkj31xo0qaqly.jpg" alt=""></p>
+<p>连续访问100次，返回200为正常<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">for i in &#123;1..100&#125;; do curl -o /dev/null -s -w &quot;%&#123;http_code&#125;\n&quot; http://$&#123;GATEWAY_URL&#125;:$&#123;HTTP2_PORT&#125;/productpage; done</span><br></pre></td></tr></table></figure></p>
+<p>通过 <a href="http://prometheus.istio.io" target="_blank" rel="noopener">http://prometheus.istio.io</a> 尝试在 Prometheus 中查询数据：<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxn36aabc3j31nr0u07wi.jpg" alt=""></p>
+<p>通过 <a href="http://grafana.istio.io" target="_blank" rel="noopener">http://grafana.istio.io</a> 访问 Grafana 服务：<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn35ypygyj31f70u07wh.jpg" alt=""></p>
+<p>通过 <a href="http://servicegraph.istio.io" target="_blank" rel="noopener">http://servicegraph.istio.io</a> 访问 ServiceGraph 服务，展示服务之间调用关系图，其中使用 DOT 作为图形描述语言而 graphviz 将 DOT 语言的文本渲染成为图片。</p>
+<ul>
+<li><a href="http://servicegraph.istio.io/force/forcegraph.html" target="_blank" rel="noopener">http://servicegraph.istio.io/force/forcegraph.html</a> : 交互式 D3.js 图形<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn3hu5oz7j31750u0tv0.jpg" alt=""></li>
+<li><a href="http://servicegraph.istio.io/dotviz" target="_blank" rel="noopener">http://servicegraph.istio.io/dotviz</a> : 静态 Graphviz 图形<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxn3i26awzj31n70u0b29.jpg" alt=""></li>
+<li><a href="http://servicegraph.istio.io/dotgraph" target="_blank" rel="noopener">http://servicegraph.istio.io/dotgraph</a> : 以 DOT 语言呈现<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxn3i7zqk9j30zk0qkhdf.jpg" alt=""></li>
+<li><a href="http://servicegraph.istio.io/d3graph" target="_blank" rel="noopener">http://servicegraph.istio.io/d3graph</a> : 将 D3 图形以 JSON 文本呈现<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxn3ie4qwfj31xw08iaru.jpg" alt=""></li>
+<li><a href="http://servicegraph.istio.io/graph" target="_blank" rel="noopener">http://servicegraph.istio.io/graph</a> : 以通用 JSON 文本呈现<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn3inqm7bj31xq0c41kx.jpg" alt=""></li>
+</ul>
+<p>通过 <a href="http://tracing.istio.io/" target="_blank" rel="noopener">http://tracing.istio.io/</a> 访问 Jaeger 跟踪页面，尝试查询 productpage 的历史访问数据：<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn374c811j31gd0u07wh.jpg" alt=""></p>
+<h3 id="为-Istio-安装可观测性工具-Kiali"><a href="#为-Istio-安装可观测性工具-Kiali" class="headerlink" title="为 Istio 安装可观测性工具 Kiali"></a>为 Istio 安装可观测性工具 Kiali</h3><p>没有一个统一的可视化工具是不是很麻烦呢？ Kiali 是专为 Istio 提供可视化服务网格的拓扑的一个开源项目，你可以通过 Kali 监控到服务网格中微服务各个组件的运行状况，Kiali 也可以调用 Jaeger 提供服务链路的分布式追踪能力。</p>
+<p>Kiali 版本查询 <a href="https://github.com/kiali/kiali/releases" target="_blank" rel="noopener">kiali release</a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 由于 “envsubst” 在Ubuntu中默认有安装，所以我们这里 centos 系统还要从 gettext 中安装 “envsubst”</span><br><span class="line">$ yum install gettext</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"># Jaeger 和 Grafana 的 ingress 地址，一定要可从浏览器打开的地址，如 ingress 或 NodePort</span><br><span class="line">$ JAEGER_URL=&quot;http://tracing.istio.io&quot;</span><br><span class="line">$ GRAFANA_URL=&quot;http://grafana.istio.io&quot;</span><br><span class="line"></span><br><span class="line"># 要安装的 Kiali 的版本，当时我选用的是0.10.0</span><br><span class="line">$ VERSION_LABEL=&quot;v0.10.0&quot;</span><br><span class="line"></span><br><span class="line"># 安装</span><br><span class="line">$ curl https://raw.githubusercontent.com/kiali/kiali/$&#123;VERSION_LABEL&#125;/deploy/kubernetes/kiali-configmap.yaml | \</span><br><span class="line">  VERSION_LABEL=$&#123;VERSION_LABEL&#125; \</span><br><span class="line">  JAEGER_URL=$&#123;JAEGER_URL&#125;  \</span><br><span class="line">  ISTIO_NAMESPACE=istio-system  \</span><br><span class="line">  GRAFANA_URL=$&#123;GRAFANA_URL&#125; envsubst | kubectl create -n istio-system -f -</span><br><span class="line"></span><br><span class="line">$ curl https://raw.githubusercontent.com/kiali/kiali/$&#123;VERSION_LABEL&#125;/deploy/kubernetes/kiali-secrets.yaml | \</span><br><span class="line">  VERSION_LABEL=$&#123;VERSION_LABEL&#125; envsubst | kubectl create -n istio-system -f -</span><br><span class="line"></span><br><span class="line">$ curl https://raw.githubusercontent.com/kiali/kiali/$&#123;VERSION_LABEL&#125;/deploy/kubernetes/kiali.yaml | \</span><br><span class="line">  VERSION_LABEL=$&#123;VERSION_LABEL&#125;  \</span><br><span class="line">  IMAGE_NAME=kiali/kiali \</span><br><span class="line">  IMAGE_VERSION=$&#123;VERSION_LABEL&#125;  \</span><br><span class="line">  NAMESPACE=istio-system  \</span><br><span class="line">  VERBOSE_MODE=4  \</span><br><span class="line">  IMAGE_PULL_POLICY_TOKEN=&quot;imagePullPolicy: Always&quot; envsubst | kubectl create -n istio-system -f -</span><br></pre></td></tr></table></figure>
+<p>查看 kiali 的 service 可知，我们可以通过 NodePort 的方式访问 kiali 的 ui<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxn302c58yj31bo0bimz5.jpg" alt=""></p>
+<p>使用 admin/admin 登录 Kiali<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxn39proh5j31o70u0trh.jpg" alt=""></p>
+<p>安装完成，后面我们着重来看他的功能实现，后面也计划将中文社区中的一些文档搬过来，当然有我的还有其他朋友的，都会一一注明的。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://link.hhtjim.com/163/5058570.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/diaspora.js"></script>
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-128257903-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+
+</html>
