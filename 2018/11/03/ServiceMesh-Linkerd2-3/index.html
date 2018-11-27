@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="" class="loading">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heisenbergye的博客</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate">
+    <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
+    <meta name="description" content="Heisenbergye,之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念,"> 
+    <meta name="author" content="Zhan Ye"> 
+    <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+    <link rel="stylesheet" href="/css/diaspora.css">
+</head>
+</html>
+<body class="loading">
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">ServiceMesh-初识Linkerd2.0(三)</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">ServiceMesh-初识Linkerd2.0(三)</h1>
+        <div class="stuff">
+            <span>十一月 03, 2018</span>
+            
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Linkerd/">Linkerd</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Service-Mesh/">Service Mesh</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>&nbsp;&nbsp;&nbsp;&nbsp; 我们先回顾下前面的内容，Linkerd2与Linkerd相比，它专用于Kubernetes集群中，并且比Linkerd更轻量级（基于Rust和Go，没有了JVM 等大内存的开销）。以sidecar的方式把高性能、轻量级代理跟实际服务的Pod运行在一起（这点跟Istio类似），而不再是DaemonSet。支持代理所有TCP流量，包括WebSockets和HTTP通道，支持图形报告HTTP/1.x、HTTP/2和gRPC流量的遥测数据，流量加密（TLS）等。所以Linkerd2主要作用总结下来就是解决云原生应用的监控、可靠性以及安全性，例如帮助用户快速定位服务故障是什么原因导致的、是不是延迟的问题、特定的端点是否返回了非法的响应或者含有不可靠的依赖等等。所以这一节我们主要讨论Linkerd 2.0的功能。</p>
+<h4 id="1-CLI功能介绍："><a href="#1-CLI功能介绍：" class="headerlink" title="1. CLI功能介绍："></a>1. CLI功能介绍：</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; 前面我们使用linkerd install命令在Kubernetes集群中安装了Linkerd2的控制平面，下面我们着重来看他的解析</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# linkerd2 install -h</span><br><span class="line"></span><br><span class="line">Flags:</span><br><span class="line">      --api-port uint                   Linkerd controller服务运行的端口，可以在安装Linkerd时修改 (默认 8086)</span><br><span class="line">      --control-port uint               Pod和控制平面通信使用的代理端口(默认 4190，如果服务已占用此端口可以使用此选项修改 )</span><br><span class="line">      --controller-log-level string     controller和web组件的日志等级 (默认 &quot;info&quot;)</span><br><span class="line">      --controller-replicas uint        期望部署controller的副本数 (默认 1)</span><br><span class="line">  -h, --help                            help for install</span><br><span class="line">      --image-pull-policy string        镜像拉取策略(默认 &quot;IfNotPresent&quot;)</span><br><span class="line">      --inbound-port uint               入站流量的代理端口 (默认 4143)</span><br><span class="line">      --init-image string               指定init容器的镜像名，比如heisenbergye/proxy-init</span><br><span class="line">  -v, --linkerd-version string          指定镜像tag (此版本默认 &quot;edge-18.10.4&quot;)</span><br><span class="line">      --metrics-port uint               遥测代理端口 (默认 4191)</span><br><span class="line">      --outbound-port uint              出站流量的代理端口 (默认 4140)</span><br><span class="line">      --prometheus-replicas uint        期望部署prometheus的副本数  (default 1)</span><br><span class="line">      --proxy-auto-inject               测试阶段: 启用自动注入SideCar的webhook，默认不启用</span><br><span class="line">      --proxy-bind-timeout string       允许Proxy绑定Pod网卡并开始代理接收流量(默认 &quot;10s&quot;)</span><br><span class="line">      --proxy-cpu string                代理容器的CPU的requests值</span><br><span class="line">      --proxy-image string              指定Proxy容器的镜像名，比如heisenbergye/proxy</span><br><span class="line">      --proxy-log-level string          Proxy容器的日志级别 (默认 &quot;warn,linkerd2_proxy=info&quot;)</span><br><span class="line">      --proxy-memory string             Proxy容器的内存的requests值</span><br><span class="line">      --proxy-uid int                   运行Proxy容器的用户ID (默认 2102)</span><br><span class="line">      --registry string                 镜像仓库，比如docker.io/heisenbergye</span><br><span class="line">      --single-namespace                测试阶段: 配置控制平面只在其所在namespace操作，默认不启用</span><br><span class="line">      --skip-inbound-ports uintSlice    不希望被代理的入站流量的端口 (默认[4190,4191])</span><br><span class="line">      --skip-outbound-ports uintSlice   不希望被代理的出站流量的端口 (默认 [])</span><br><span class="line">      --tls string                      测试阶段：启用流量加密，只能填 &quot;optional&quot;，默认不启用</span><br><span class="line">      --web-replicas uint               期望部署web的副本数 (默认 1)</span><br></pre></td></tr></table></figure>
+<p>还有一些Kubernetes中的配置，比如指定kubeconfig和context，或者apiserver，还有前面说的指定namespace等，这里不再赘述。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 前文中步骤我们先用kubectl部署了应用，再使用linkerd inject命令对正在运行中的服务注入SideCar配置，通过使用Kubernetes的滚动更新功能生成新的Pod替代，新的Pod中先由init容器配置iptables来重定向所有流量，再在原服务旁添加一个Proxy SideCar容器，更新过程中应用的可用性不会受到影响。这里我们直接用linkerd inject命令对服务的YAML加入SideCar配置，再去创建带有SideCar的服务Pod。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# linkerd2 inject emojivoto.yml | kubectl  apply -f -</span><br><span class="line"></span><br><span class="line">hostNetwork: pods do not use host networking...............................[ok]</span><br><span class="line">sidecar: pods do not have a proxy or initContainer already injected........[ok]</span><br><span class="line">supported: at least one resource injected..................................[ok]</span><br><span class="line">udp: pod specs do not include UDP ports....................................[ok]</span><br><span class="line"></span><br><span class="line">Summary: 4 of 8 YAML document(s) injected</span><br><span class="line">  deployment/emoji</span><br><span class="line">  deployment/voting</span><br><span class="line">  deployment/web</span><br><span class="line">  deployment/vote-bot</span><br><span class="line"></span><br><span class="line">namespace/emojivoto configured</span><br><span class="line">deployment.apps/emoji created</span><br><span class="line">service/emoji-svc created</span><br><span class="line">deployment.apps/voting created</span><br><span class="line">service/voting-svc created</span><br><span class="line">deployment.apps/web created</span><br><span class="line">service/web-svc created</span><br><span class="line">deployment.apps/vote-bot created</span><br></pre></td></tr></table></figure>
+<p>如下图所示，在Linkerd Dashboard中显示服务的所有Pod都被meshed，说明服务已经成功加入到服务网格中。<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxloctb6ryj31o80u07v0.jpg" alt=""></p>
+<p>linkerd inject命令分析：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# linkerd2 inject --help</span><br><span class="line"></span><br><span class="line">Flags:</span><br><span class="line">      --api-port uint                   Linkerd controller服务运行的端口，可以在安装Linkerd时修改 (默认 8086)</span><br><span class="line">      --control-port uint               Pod和控制平面通信使用的代理端口(默认 4190，如果服务已占用此端口可以使用此选项修改 )</span><br><span class="line">  -h, --help                            help for inject</span><br><span class="line">      --image-pull-policy string        镜像拉取策略(默认 &quot;IfNotPresent&quot;)</span><br><span class="line">      --inbound-port uint               入站流量的代理端口 (默认 4143)</span><br><span class="line">      --init-image string               指定init容器的镜像名，比如heisenbergye/proxy-init</span><br><span class="line">  -v, --linkerd-version string          指定镜像tag (此版本默认 &quot;edge-18.10.4&quot;)</span><br><span class="line">      --metrics-port uint               遥测代理端口 (默认 4191)</span><br><span class="line">      --outbound-port uint              出站流量的代理端口 (默认 4140)</span><br><span class="line">      --proxy-bind-timeout string       允许Proxy绑定Pod网卡并开始代理接收流量(默认 &quot;10s&quot;)</span><br><span class="line">      --proxy-cpu string                代理容器的CPU的requests值</span><br><span class="line">      --proxy-image string              指定Proxy容器的镜像名，比如heisenbergye/proxy</span><br><span class="line">      --proxy-log-level string          Proxy容器的日志级别 (默认 &quot;warn,linkerd2_proxy=info&quot;)</span><br><span class="line">      --proxy-memory string             Proxy容器的内存的requests值</span><br><span class="line">      --proxy-uid int                   运行Proxy容器的用户ID (默认 2102)</span><br><span class="line">      --registry string                 镜像仓库，比如docker.io/heisenbergye</span><br><span class="line">      --skip-inbound-ports uintSlice    不希望被代理的入站流量的端口 (默认[4190,4191])</span><br><span class="line">      --skip-outbound-ports uintSlice   不希望被代理的出站流量的端口 (默认 [])</span><br><span class="line">      --tls string                      启用流量加密时，只能填 &quot;optional&quot;</span><br></pre></td></tr></table></figure></p>
+<p>PS：自动流量加密（TLS）和自动注入SideCar功能还在测试阶段，安装Linkerd2默认不开启，只有edge版本才可以试用，期待这两个功能GA…………</p>
+<h5 id="自动流量加密"><a href="#自动流量加密" class="headerlink" title="自动流量加密"></a>自动流量加密</h5><p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd能用来为应用间通信自动协商TLS。当此功能被启用时，Linkerd自动在Proxy之间建立和认证安全、私密地连接，且不会中断未启用TLS的proxy之间不加密的通信。</p>
+<p>启用TLS，需要重新安装linkerd，他会在控制平台运行一个CA，CA监控被Linkerd meshed的Pod的创建和更新，每个pod会生成一个私钥，颁发一张证书，并且私钥和证书会以Secret形式分配和pod<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# linkerd2 install --tls=optional | kubectl apply -f -</span><br></pre></td></tr></table></figure></p>
+<p>在控制平面配置启用TLS后，在向应用注入proxy的时候也要启用TLS<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# linkerd2 inject  --tls=optional emojivoto.yml | kubectl apply -f -</span><br></pre></td></tr></table></figure></p>
+<p>Dashboard, linkerd stat和linkerd tap命令可以显示加密流量的状态：<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxloddgugzj314u05kn2g.jpg" alt=""><br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxloe2mihej31q10u07vm.jpg" alt=""><br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxlodm6jb3j31bg0g8x0o.jpg" alt=""><br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxloeavs51j323e0u0tua.jpg" alt=""><br>可以看到emoji、voting、web三个服务都是加密的，voting和web服务的成功率较低是因为web服务的延迟较高</p>
+<h5 id="自动注入SideCar"><a href="#自动注入SideCar" class="headerlink" title="自动注入SideCar"></a>自动注入SideCar</h5><p>&nbsp;&nbsp;&nbsp;&nbsp; 自动注入SideCar，顾名思义，即在使用kubectl部署应用的时候自动添加Proxy到pod中。此功能需要用到Kubernetes的动态准入控制（Dynamic Admission Control，1.9+），所以需要安装一个Admission webhook，先确认Kubernetes集群的apiserver是否是1.9以上版本并且启用admissionregistration API<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# kubectl api-versions | grep admissionregistration</span><br><span class="line">admissionregistration.k8s.io/v1beta1</span><br></pre></td></tr></table></figure></p>
+<p>该功能的特性如下：</p>
+<ul>
+<li>集成Linkerd CA（所以要同时启用TLS）来管理kube-apiserver和自动注入代理的webhook之间的安全、私密的连接</li>
+<li>所有需要的权限定义在一个叫linkerd-linkerd-proxy-injector的新创建的cluster role中，和控制平台的cluster role是分开的</li>
+<li>在有linkerd.io/auto-inject: enabled标签或者没有打标签的namespace中，当创建Deployment时都会被自动注入代理</li>
+<li>带有linked.io/auto-inject: disabled标签的Namespace不会启用该功能</li>
+<li>在启用该功能的标签的namespace中，Deployment中的pod模板带有linkerd.io/auto-inject: disabled或者linkerd.io/auto-inject: completed的标签都不会在pod注入代理；Deployment中的pod模板有linkerd.io/auto-inject: enabled标签或者没有打标签，pod里都会被自动注入代理</li>
+<li>该功能目前只能用在Deployment的资源类型中，像StatefulSet, DaemonSet, Pod资源类型中都不能使用 </li>
+</ul>
+<p>启用自动注入代理必须要同时启用–tls=optional和–proxy-auto-inject ，需要重新安装linkerd<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">linkerd2 install --tls=optional --proxy-auto-inject | kubectl apply -f -</span><br></pre></td></tr></table></figure></p>
+<p>确认安装成功，控制平面除添加了CA外还增加了一个proxy-injector webhook的Pod<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# kubectl get pod -n linkerd</span><br><span class="line">NAME                              READY     STATUS    RESTARTS   AGE</span><br><span class="line">ca-7d67fd474f-62psq               2/2       Running   0          8h</span><br><span class="line">controller-695f97b4d7-qzmbm       5/5       Running   0          8h</span><br><span class="line">grafana-654bbc7857-q9zz4          2/2       Running   0          8h</span><br><span class="line">prometheus-559bdd9dfc-g64th       2/2       Running   0          8h</span><br><span class="line">proxy-injector-646874cb74-6fsv6   2/2       Running   0          8h</span><br><span class="line">web-854ddcb68c-mms8f              2/2       Running   0          8h</span><br><span class="line"></span><br><span class="line">[root@master ~]# linkerd2 check</span><br><span class="line">kubernetes-api: can initialize the client..................................[ok]</span><br><span class="line">kubernetes-api: can query the Kubernetes API...............................[ok]</span><br><span class="line">kubernetes-api: is running the minimum Kubernetes API version..............[ok]</span><br><span class="line">linkerd-api: control plane namespace exists................................[ok]</span><br><span class="line">linkerd-api: control plane pods are ready..................................[ok]</span><br><span class="line">linkerd-api: can initialize the client.....................................[ok]</span><br><span class="line">linkerd-api: can query the control plane API...............................[ok]</span><br><span class="line">linkerd-api[kubernetes]: control plane can talk to Kubernetes..............[ok]</span><br><span class="line">linkerd-api[prometheus]: control plane can talk to Prometheus..............[ok]</span><br><span class="line">linkerd-api: no invalid service profiles...................................[ok]</span><br><span class="line">linkerd-version: can determine the latest version..........................[ok]</span><br><span class="line">Status check results are [ok]</span><br></pre></td></tr></table></figure></p>
+<p>我们先创建三个namespace，namespace:unlabeled中是没有打标签的，namespace:enabled中带有标签linkerd.io/auto-inject: enabled，namespace:disabled中带有标签linkerd.io/auto-inject: disabled<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"># 创建不打标签的namespace</span><br><span class="line">[root@master ~]# kubectl create ns unlabeled</span><br><span class="line">namespace/unlabeled created</span><br><span class="line"></span><br><span class="line"># 创建带linkerd.io/auto-inject=enabled标签的namespace</span><br><span class="line">[root@master ~]# kubectl create ns enabled</span><br><span class="line">namespace/enabled created</span><br><span class="line">[root@master ~]# kubectl label ns enabled linkerd.io/auto-inject=enabled</span><br><span class="line">namespace/enabled labeled</span><br><span class="line"></span><br><span class="line"># 创建带linkerd.io/auto-inject=disabled标签的namespace</span><br><span class="line">[root@master ~]# kubectl create ns disabled</span><br><span class="line">namespace/disabled created</span><br><span class="line">[root@master ~]# kubectl label ns disabled linkerd.io/auto-inject=disabled</span><br><span class="line">namespace/disabled labeled</span><br></pre></td></tr></table></figure></p>
+<p>分别使用kubectl在三个namespace中创建应用，观察是否自动注入了SideCar到Pod中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"># 分别在不同的namespace中创建Deployment</span><br><span class="line">[root@master ~]# kubectl run nginx --image=nginx:alpine --port=80 -n unlabeled</span><br><span class="line">[root@master ~]# kubectl run nginx --image=nginx:alpine --port=80 -n enabled</span><br><span class="line">[root@master ~]# kubectl run nginx --image=nginx:alpine --port=80 -n disabled</span><br><span class="line"></span><br><span class="line"># </span><br><span class="line">[root@master ~]# kubectl -n unlabeled get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-6745c9f95b-lh54d   2/2       Running   0          21s</span><br><span class="line">[root@master ~]# kubectl -n enabled get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-5bdbb9bdb5-fdclz   2/2       Running   0          12m</span><br><span class="line">[root@master ~]# kubectl -n disabled get po</span><br><span class="line">NAME                     READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-5dbb4c75cd-mnfp8   1/1       Running   0          12m</span><br><span class="line"></span><br><span class="line"># 查看是否有secret生成</span><br><span class="line">[root@master ~]# kubectl -n unlabeled get secret</span><br><span class="line">NAME                              TYPE                                  DATA      AGE</span><br><span class="line">default-token-cgs5g               kubernetes.io/service-account-token   3         2m</span><br><span class="line">nginx-deployment-tls-linkerd-io   Opaque                                2         1m</span><br><span class="line">[root@master ~]# kubectl -n enabled get secret</span><br><span class="line">NAME                              TYPE                                  DATA      AGE</span><br><span class="line">default-token-6zxbk               kubernetes.io/service-account-token   3         16m</span><br><span class="line">nginx-deployment-tls-linkerd-io   Opaque                                2         13m</span><br><span class="line">[root@master ~]# kubectl -n disabled get secret</span><br><span class="line">NAME                  TYPE                                  DATA      AGE</span><br><span class="line">default-token-s5mhw   kubernetes.io/service-account-token   3         16m</span><br></pre></td></tr></table></figure></p>
+<p>查看注入的SideCar容器中是否在和控制平面通信中启用TLS<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxloexk5iuj31bo0ji1kx.jpg" alt=""><br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxlof9bi2nj31bw0jq1kx.jpg" alt=""></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 说明在有linkerd.io/auto-inject: enabled标签或者没有打标签的namespace中，当创建Deployment时都会被自动注入代理，并且在和控制平面通信中自动启用TLS对流量加密；带有linked.io/auto-inject: disabled标签的Namespace不会自动注入SideCar。这样可以实现在不同的namespace有效隔离需要被meshed和不需要被meshed的应用。那在一个有linkerd.io/auto-inject: enabled标签或者没有打标签的namespace中是否也可以隔离需要被meshed和不需要被meshed的应用呢？</p>
+<p>我们在namespace:enabled中创建四个Deployment，分别带有linkerd.io/auto-inject: disabled、linkerd.io/auto-inject: completed、linkerd.io/auto-inject: enabled标签和不打标签四种，观察是否自动注入了SideCar到Pod中<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">[root@master ~]# kubectl -n enabled run nginx-disabled --image=nginx:alpine --port=80 --labels=&quot;linkerd.io/auto-inject=disabled&quot;</span><br><span class="line">[root@master ~]# kubectl -n enabled run nginx-completed --image=nginx:alpine --port=80 --labels=&quot;linkerd.io/auto-inject=completed&quot;</span><br><span class="line">[root@master ~]# kubectl -n enabled run nginx-enabled --image=nginx:alpine --port=80 --labels=&quot;linkerd.io/auto-inject=disabled&quot;</span><br><span class="line">[root@master ~]# kubectl -n enabled run nginx-unlabeled --image=nginx:alpine --port=80</span><br><span class="line"></span><br><span class="line">[root@master nginx]# kubectl -n enabled get pod</span><br><span class="line">NAME                               READY     STATUS    RESTARTS   AGE</span><br><span class="line">nginx-completed-655cdfb7bc-25zr4   1/1       Running   0          22m</span><br><span class="line">nginx-disabled-f78895799-ttt8w     1/1       Running   0          5s</span><br><span class="line">nginx-enabled-64ff6f6798-68n4c     2/2       Running   0          13m</span><br><span class="line">nginx-unlabeled-7f7fd88fb-5vjxp    2/2       Running   0          25m</span><br><span class="line"></span><br><span class="line"># 查看是否有secret生成</span><br><span class="line">[root@master nginx]# kubectl -n enabled get secret</span><br><span class="line">NAME                                        TYPE                                  DATA      AGE</span><br><span class="line">default-token-6zxbk                         kubernetes.io/service-account-token   3         1h</span><br><span class="line">nginx-enabled-deployment-tls-linkerd-io     Opaque                                2         13m</span><br><span class="line">nginx-unlabeled-deployment-tls-linkerd-io   Opaque                                2         25m</span><br></pre></td></tr></table></figure></p>
+<p>查看注入的SideCar容器中是否在和控制平面通信中启用TLS<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxlofra5vcj31bm0jg1kx.jpg" alt=""><br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlog0zrn1j31bg0g4tw4.jpg" alt=""></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 说明在有linkerd.io/auto-inject: enabled标签或者没有打标签的namespace中，Deployment中的pod模板有linkerd.io/auto-inject: enabled标签或者没有打标签，pod里都会被自动注入代理，并且在和控制平面通信中启用TLS；强调必须是Deployment中的pod模板带有linkerd.io/auto-inject: disabled或者linkerd.io/auto-inject: completed的标签都不会在pod注入代理。这样可以实现在启用自动注入的namespace中有效隔离需要被meshed和不需要被meshed的应用。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 本节就先介绍完CLI的使用和两个特性，当然CLI还可以查看应用状态，但是我们有更直观的Dashboard，所以下一节介绍如何通过Dashboard去查看应用状态和排查应用故障。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://link.hhtjim.com/163/34078196.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/diaspora.js"></script>
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-128257903-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+
+</html>

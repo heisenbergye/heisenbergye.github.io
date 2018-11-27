@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="" class="loading">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heisenbergye的博客</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate">
+    <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
+    <meta name="description" content="Heisenbergye,之前我们讲了 Linkerd2 ，了解了什么是 ServiceMesh ，本篇开始我们来讲 ServiceMesh 的另一种实现方式 Istio。本篇作为 Istio 第一篇主要讲述Istio的概念,"> 
+    <meta name="author" content="Zhan Ye"> 
+    <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+    <link rel="stylesheet" href="/css/diaspora.css">
+</head>
+</html>
+<body class="loading">
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">ServiceMesh--初识Linkerd2.0</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">ServiceMesh--初识Linkerd2.0</h1>
+        <div class="stuff">
+            <span>十月 28, 2018</span>
+            
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Linkerd/">Linkerd</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Service-Mesh/">Service Mesh</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <h4 id="一、-Linkerd-2-0-介绍"><a href="#一、-Linkerd-2-0-介绍" class="headerlink" title="一、 Linkerd 2.0 介绍"></a>一、 Linkerd 2.0 介绍</h4><p>&nbsp;&nbsp;&nbsp;&nbsp; 首先我们来看什么是 Service Mesh。根据Linkerd CEO William Morgan定义，“Service Mesh是用于处理服务间通信的基础设施层，用于在云原生应用复杂的服务拓扑中实现可靠的请求传递。在实践中，Service Mesh通常是一组与应用一起部署，但对应用透明的轻量级网络代理。”我们可以将其比作是用于处理服务间通信的专用基础设施层，负责服务之间的网络调用、限流、熔断和监控。但与传统基础设施层不同之处在于，它形成了一个分布式的互连代理网络，以sidecar形式部署在服务两侧，服务对于代理无感知，且服务间所有通信都由代理进行路由。<br>&nbsp;&nbsp;&nbsp;&nbsp; 如图中绿色方块为应用服务，蓝色方块为 Sidecar Proxy，应用服务之间通过 Sidecar Proxy 进行通信，整个服务通信形成图中的蓝色网络连线，图中所有蓝色部分就形成了 Service Mesh。<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlnuv524vj30c807vt8s.jpg" alt=""></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 如下图所示，Service Mesh中分为控制平面（Control plane）和数据平台（Data plane），类似结构可以和SDN（软件定义网络）对比。Control plane定义服务发现、路由、流量控制等策略。这些策略可以是全局的，也可以是限定的。Data plane负责在所有服务中通过sidecar代理进行服务通信，并应用和执行策略。<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxlnvbjsvvj30id0bpdhc.jpg" alt=""></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 当下微服务框架如Dubbo、Spring越来越流行，虽然技术也很成熟了，但是一个公司的不同应用系统或者一个应用系统中不同组件通常会使用多种技术栈，所以研发运营的技术成本较高，打通技术栈的服务治理显得越发重要。也不知道谁说的“没有什么问题不是抽象出一层解决不了的。如果有，那就再抽象一层。”，如上所说Service Mesh就是抽象出用于处理服务间通信的专用基础设施层，在不侵入应用代码的前提下，提供服务治理所需的服务注册发现、负载均衡、熔断降级、监控等功能，从而提升开发运维和服务间调用的效率。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd是Service Mesh（服务网格）的一种实现方式，核心是一个高性能透明代理，支持Kubernetes等多种框架。Linkerd通过提供自动可观察性、可靠性和运行时诊断，而无需更改配置或代码，使得服务运行更加简单和安全。Linkerd基于Netty和Finagle构建，Finagle是经过生产测试的RPC框架，采用于Twitter、Pinterest、Tumblr、PagerDuty等高流量公司。目前2.0 版本正式GA已经一月有余，本次除了带来了性能、资源消耗和易用性方面的显着改进，更重大的变革是将目光从集群范围的 Service Mesh 转到了可组合的 Service Sidecar。主要更新内容如下：</p>
+<ol>
+<li>独立的“Service Sidecar”设计，无需集群范围的安装即可增强单一服务。</li>
+<li>集群范围 Service Mesh 的增量路径，跨多个服务的 Service Sidecar 链接成为 Service Mesh。</li>
+<li>安装过程零配置，零代码更改。</li>
+<li>自动 Grafana 仪表板和 Prometheus 监控服务“黄金指标”。</li>
+<li>服务之间的自动 TLS，包括证书生成和分发。</li>
+<li>Rust 中完整的代理重写，在延迟、吞吐量和资源消耗方面有巨大改进。</li>
+</ol>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 前面说到Service Mesh中分为控制平面和数据平面，Linkerd2.0中控制平面由一组运行在专用的Kubernetes命名空间（默认linkerd）的服务组成。这些服务汇集不同的遥测数据，提供一个面向用户的API，提供控制数据给数据平面的代理等。<br>控制平面有四个组件组成：</p>
+<ul>
+<li>Controller的deployment中包含public-api, proxy-api, destination, tap四个容器，提供绝大部分控制平面的功能</li>
+<li>Web提供Linkerd dashboard</li>
+<li>Prometheus，透明代理暴露服务pod的/metrics，所有Metrics被收集（间隔10s）并存放在prometheus中，该prometheus实例专用来处理Linkerd生成的数据。</li>
+<li>Grafana，Linkerd附带许多grafana dashboard（Metrics、Deployment、Pod和Linkerd），可以通过Linkerd dashboard中的链接进入。</li>
+</ul>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwly1fxlnvqkg22j30qo0f0mxj.jpg" alt=""></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 数据平面由轻量代理组成，代理以sidecar容器的形式部署在每个服务实例旁。为了添加一个服务到Linkerd服务网格，运行该服务的pod必须被注入代理后重新部署，通过代理透明地汇集来自每个实例的流量。这些代理透明的拦截pod之间的通信，可对流量进行监测和加密（TLS），也可以执行相关的策略拒绝请求。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; 代理，基于Rust和Go编写的高性能轻量级透明代理，安装在每个服务的Pod中组成数据平面的一部分。代理接收所有进入服务的流量并拦截所有出流量，通过initcontainer配置的iptables规则转发流量。正因为这样，代理可以被添加到正在运行的服务中而代码不需要做任何修改。<br>代理的特性包括：</p>
+<ul>
+<li>透明的，无需任何配置的代理 HTTP, HTTP/2和几乎所有TCP协议的</li>
+<li>自动的针对HTTP和TCP流量暴露Prometheus Metrics</li>
+<li>透明的，无需任何配置的 WebSocket 代理</li>
+<li>自动的延迟感知，7层负载均衡</li>
+<li>自动的4层负载均衡</li>
+<li>自动加密(TLS)</li>
+<li>按需跟踪服务流量和诊断</li>
+<li>代理支持DNS服务发现和gRPC框架</li>
+</ul>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd CLI运行在本地，用于与控制平面和数据平面交互，也可以用来查看实时状态、debug，安装和升级。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Linkerd Dashboard提供了一个高质量的前端界面实时展现你的服务运行状态，他能用来查看“黄金级别”的metrics（请求成功率、请求响应时间和延迟），视图化服务之间的依赖关系，查看特定服务路由的健康状况。</p>
+<h4 id="二、-安装Linkerd"><a href="#二、-安装Linkerd" class="headerlink" title="二、 安装Linkerd"></a>二、 安装Linkerd</h4><p>本文搭建环境为kubernetes 1.11.2</p>
+<ol>
+<li>安装CLI<br>在线安装：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># curl -sL https://run.linkerd.io/install | sh</span></span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>或下载二进制文件：<a href="https://github.com/linkerd/linkerd2/releases/" target="_blank" rel="noopener">https://github.com/linkerd/linkerd2/releases/</a><br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># chmod u+x linkerd2-cli-edge-18.10.4-linux</span></span><br><span class="line"><span class="comment"># mv linkerd2-cli-edge-18.10.4-linux /usr/local/bin/linkerd2</span></span><br><span class="line"><span class="comment"># linkerd2 version</span></span><br><span class="line">Client version: edge-18.10.4</span><br><span class="line">Server version: unavailable</span><br></pre></td></tr></table></figure></p>
+<ol start="2">
+<li>做k8s集群检查，是否配置正确，能否满足安装控制平面<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># linkerd2 check --pre</span></span><br><span class="line">kubernetes-api: can initialize the client..................................[ok]</span><br><span class="line">kubernetes-api: can query the Kubernetes API...............................[ok]</span><br><span class="line">kubernetes-api: is running the minimum Kubernetes API version..............[ok]</span><br><span class="line">kubernetes-setup: control plane namespace does not already exist...........[ok]</span><br><span class="line">kubernetes-setup: can create Namespaces....................................[ok]</span><br><span class="line">kubernetes-setup: can create ClusterRoles..................................[ok]</span><br><span class="line">kubernetes-setup: can create ClusterRoleBindings...........................[ok]</span><br><span class="line">kubernetes-setup: can create ServiceAccounts...............................[ok]</span><br><span class="line">kubernetes-setup: can create Services......................................[ok]</span><br><span class="line">kubernetes-setup: can create Deployments...................................[ok]</span><br><span class="line">kubernetes-setup: can create ConfigMaps....................................[ok]</span><br><span class="line">linkerd-version: can determine the latest version..........................[ok]</span><br><span class="line">linkerd-version: cli is up-to-date.........................................[ok]</span><br><span class="line"></span><br><span class="line">Status check results are [ok]</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>3.安装<br>镜像准备（感谢Troy Ying仗义相助），这里没有镜像工场只好每台主机拉取镜像：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">docker pull heisenbergye/controller:edge-18.10.4   </span><br><span class="line">docker pull heisenbergye/proxy:edge-18.10.4       </span><br><span class="line">docker pull heisenbergye/proxy-init:edge-18.10.4  </span><br><span class="line">docker pull heisenbergye/grafana:edge-18.10.4     </span><br><span class="line">docker pull heisenbergye/prometheus:v2.4.0              </span><br><span class="line">docker pull heisenbergye/web:edge-18.10.4        </span><br><span class="line">docker tag heisenbergye/controller:edge-18.10.4 gcr.io/linkerd-io/controller:edge-18.10.4    </span><br><span class="line">docker tag heisenbergye/proxy:edge-18.10.4 gcr.io/linkerd-io/proxy:edge-18.10.4         </span><br><span class="line">docker tag heisenbergye/proxy-init:edge-18.10.4 gcr.io/linkerd-io/proxy-init:edge-18.10.4    </span><br><span class="line">docker tag heisenbergye/grafana:edge-18.10.4 gcr.io/linkerd-io/grafana:edge-18.10.4       </span><br><span class="line">docker tag heisenbergye/prometheus:v2.4.0 prom/prometheus:v2.4.0                                   </span><br><span class="line">docker tag heisenbergye/web:edge-18.10.4 gcr.io/linkerd-io/web:edge-18.10.4</span><br></pre></td></tr></table></figure></p>
+<p>使用CLi安装轻量级控制平面，默认安装到linkerd的namespace，可以指定ns安装<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl create ns linkerd</span></span><br><span class="line">namespace/linkerd created</span><br><span class="line"><span class="comment"># linkerd2 install -l linkerd | kubectl apply -f -</span></span><br></pre></td></tr></table></figure></p>
+<p>待安装完成后执行命令检查Linkerd状态是否正常<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl get deploy -n linkerd</span></span><br><span class="line">NAME         DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE</span><br><span class="line">controller   1         1         1            1           5m</span><br><span class="line">grafana      1         1         1            1           5m</span><br><span class="line">prometheus   1         1         1            1           5m</span><br><span class="line">web          1         1         1            1           5m</span><br><span class="line"></span><br><span class="line"><span class="comment"># kubectl get pod -n linkerd</span></span><br><span class="line">NAME                          READY     STATUS    RESTARTS   AGE</span><br><span class="line">controller-8595c9f77d-2shbb   5/5       Running   0          5m</span><br><span class="line">grafana-8958c89bb-hpwhl       2/2       Running   0          5m</span><br><span class="line">prometheus-54d949788b-lpm7k   2/2       Running   0          5m</span><br><span class="line">web-7844df8659-hvzdx          2/2       Running   0          5m</span><br><span class="line"></span><br><span class="line"><span class="comment"># linkerd2 check</span></span><br><span class="line">kubernetes-api: can initialize the client..................................[ok]</span><br><span class="line">kubernetes-api: can query the Kubernetes API...............................[ok]</span><br><span class="line">kubernetes-api: is running the minimum Kubernetes API version..............[ok]</span><br><span class="line">linkerd-api: control plane namespace exists................................[ok]</span><br><span class="line">linkerd-api: control plane pods are ready..................................[ok]</span><br><span class="line">linkerd-api: can initialize the client.....................................[ok]</span><br><span class="line">linkerd-api: can query the control plane API...............................[ok]</span><br><span class="line">linkerd-api[kubernetes]: control plane can talk to Kubernetes..............[ok]</span><br><span class="line">linkerd-api[prometheus]: control plane can talk to Prometheus..............[ok]</span><br><span class="line">linkerd-api: no invalid service profiles...................................[ok]</span><br><span class="line">linkerd-version: can determine the latest version..........................[ok]</span><br><span class="line">linkerd-version: cli is up-to-date.........................................[ok]</span><br><span class="line">linkerd-version: control plane is up-to-date...............................[ok]</span><br><span class="line"></span><br><span class="line">Status check results are [ok]</span><br></pre></td></tr></table></figure></p>
+<p>暴露Linkerd Dashboard端口，这里使用ingress方式<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Ingress</span><br><span class="line">metadata:</span><br><span class="line">  name: ingress-linkerd</span><br><span class="line">  namespace: linkerd</span><br><span class="line">spec:</span><br><span class="line">  rules:</span><br><span class="line">  - host: web.linkerd.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: web</span><br><span class="line">          servicePort: 8084</span><br><span class="line">  - host: grafana.linkerd.com</span><br><span class="line">    http:</span><br><span class="line">      paths:</span><br><span class="line">      - path: /</span><br><span class="line">        backend:</span><br><span class="line">          serviceName: grafana</span><br><span class="line">          servicePort: 3000</span><br></pre></td></tr></table></figure></p>
+<h4 id="三、-安装demo"><a href="#三、-安装demo" class="headerlink" title="三、 安装demo"></a>三、 安装demo</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># curl -sL https://run.linkerd.io/emojivoto.yml | kubectl apply -f -</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># kubectl get pod -n emojivoto</span></span><br><span class="line">NAME                        READY     STATUS    RESTARTS   AGE</span><br><span class="line">emoji-667dc6f77-59w5s       1/1       Running   0          1m</span><br><span class="line">vote-bot-5c5cfb764c-dvcxn   1/1       Running   0          1m</span><br><span class="line">voting-86954dbfbd-52mgn     1/1       Running   0          1m</span><br><span class="line">web-84dfc8b799-wp7rx        1/1       Running   0          1m</span><br><span class="line"><span class="comment"># kubectl get svc -n emojivoto</span></span><br><span class="line">NAME         TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE</span><br><span class="line">emoji-svc    ClusterIP      None           &lt;none&gt;        8080/TCP       1m</span><br><span class="line">voting-svc   ClusterIP      None           &lt;none&gt;        8080/TCP       1m</span><br><span class="line">web-svc      LoadBalancer   10.96.251.49   &lt;pending&gt;     80:31293/TCP   1m</span><br></pre></td></tr></table></figure>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlnxg4mmwj319m0u0b29.jpg" alt=""></p>
+<p>向服务注入sidecar<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># kubectl get -n emojivoto deploy -o yaml   | linkerd2 inject -   | kubectl apply -f -</span></span><br><span class="line"></span><br><span class="line">hostNetwork: pods <span class="keyword">do</span> not use host networking...............................[ok]</span><br><span class="line">sidecar: pods <span class="keyword">do</span> not have a proxy or initContainer already injected........[ok]</span><br><span class="line">supported: at least one resource injected..................................[ok]</span><br><span class="line">udp: pod specs <span class="keyword">do</span> not include UDP ports....................................[ok]</span><br><span class="line"></span><br><span class="line">Summary: 1 of 1 YAML document(s) injected</span><br><span class="line">  deployment/web</span><br><span class="line"></span><br><span class="line">deployment.extensions/emoji configured</span><br><span class="line">deployment.extensions/vote-bot configured</span><br><span class="line">deployment.extensions/voting configured</span><br><span class="line">deployment.extensions/web configured</span><br></pre></td></tr></table></figure></p>
+<p>检查代理注入的状态和暴露metrics<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># linkerd2 -n emojivoto check --proxy</span></span><br><span class="line">kubernetes-api: can initialize the client..................................[ok]</span><br><span class="line">kubernetes-api: can query the Kubernetes API...............................[ok]</span><br><span class="line">kubernetes-api: is running the minimum Kubernetes API version..............[ok]</span><br><span class="line">linkerd-api: control plane namespace exists................................[ok]</span><br><span class="line">linkerd-api: control plane pods are ready..................................[ok]</span><br><span class="line">linkerd-api: can initialize the client.....................................[ok]</span><br><span class="line">linkerd-api: can query the control plane API...............................[ok]</span><br><span class="line">linkerd-api[kubernetes]: control plane can talk to Kubernetes..............[ok]</span><br><span class="line">linkerd-api[prometheus]: control plane can talk to Prometheus..............[ok]</span><br><span class="line">linkerd-api: no invalid service profiles...................................[ok]</span><br><span class="line">linkerd-data-plane: data plane namespace exists............................[ok]</span><br><span class="line">linkerd-data-plane: data plane proxies are ready...........................[ok]</span><br><span class="line">linkerd-data-plane: data plane proxy metrics are present <span class="keyword">in</span> Prometheus.....[ok]</span><br><span class="line">linkerd-version: can determine the latest version..........................[ok]</span><br><span class="line">linkerd-version: cli is up-to-date.........................................[ok]</span><br><span class="line">linkerd-version: data plane is up-to-date..................................[ok]</span><br><span class="line"></span><br><span class="line">Status check results are [ok]</span><br></pre></td></tr></table></figure></p>
+<p>查看服务的网络流量统计情况：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># linkerd2 -n emojivoto stat deploy</span></span><br><span class="line">NAME       MESHED   SUCCESS      RPS   LATENCY_P50   LATENCY_P95   LATENCY_P99   TLS</span><br><span class="line">emoji         1/1   100.00%   2.0rps           1ms           1ms           2ms    0%</span><br><span class="line">vote-bot      1/1         -        -             -             -             -     -</span><br><span class="line">voting        1/1    81.36%   1.0rps           1ms           1ms           1ms    0%</span><br><span class="line">web           1/1    90.68%   2.0rps           4ms           5ms           9ms    0%</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxlny4q5h6j31ll0u0tfc.jpg" alt=""></p>
+<p>跟踪服务的网络流量<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># linkerd2 -n emojivoto tap deploy</span></span><br><span class="line">req id=0:1962 proxy=out src=10.244.3.111:45978 dst=10.244.3.112:80 tls=no_identity :method=GET :authority=web-svc.emojivoto:80 :path=/api/list</span><br><span class="line">req id=0:4850 proxy=<span class="keyword">in</span>  src=10.244.3.111:38056 dst=10.244.3.112:80 tls=disabled :method=GET :authority=web-svc.emojivoto:80 :path=/api/list</span><br><span class="line">req id=0:4851 proxy=out src=10.244.3.112:44754 dst=10.244.2.72:8080 tls=no_identity :method=POST :authority=emoji-svc.emojivoto:8080 :path=/emojivoto.v1.EmojiService/ListAll</span><br><span class="line">req id=0:1940 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled :method=POST :authority=emoji-svc.emojivoto:8080 :path=/emojivoto.v1.EmojiService/ListAll</span><br><span class="line">rsp id=0:1940 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled :status=200 latency=954µs</span><br><span class="line">end id=0:1940 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled grpc-status=OK duration=33µs response-length=2161B</span><br><span class="line">rsp id=0:4851 proxy=out src=10.244.3.112:44754 dst=10.244.2.72:8080 tls=no_identity :status=200 latency=3052µs</span><br><span class="line">end id=0:4851 proxy=out src=10.244.3.112:44754 dst=10.244.2.72:8080 tls=no_identity grpc-status=OK duration=48µs response-length=2161B</span><br><span class="line">rsp id=0:4850 proxy=<span class="keyword">in</span>  src=10.244.3.111:38056 dst=10.244.3.112:80 tls=disabled :status=200 latency=4378µs</span><br><span class="line">rsp id=0:1962 proxy=out src=10.244.3.111:45978 dst=10.244.3.112:80 tls=no_identity :status=200 latency=4944µs</span><br><span class="line">end id=0:4850 proxy=<span class="keyword">in</span>  src=10.244.3.111:38056 dst=10.244.3.112:80 tls=disabled duration=137µs response-length=4558B</span><br><span class="line">end id=0:1962 proxy=out src=10.244.3.111:45978 dst=10.244.3.112:80 tls=no_identity duration=187µs response-length=4558B</span><br><span class="line">req id=0:1963 proxy=out src=10.244.3.111:45978 dst=10.244.3.112:80 tls=no_identity :method=GET :authority=web-svc.emojivoto:80 :path=/api/vote</span><br><span class="line">req id=0:4852 proxy=<span class="keyword">in</span>  src=10.244.3.111:38056 dst=10.244.3.112:80 tls=disabled :method=GET :authority=web-svc.emojivoto:80 :path=/api/vote</span><br><span class="line">req id=0:4853 proxy=out src=10.244.3.112:44754 dst=10.244.2.72:8080 tls=no_identity :method=POST :authority=emoji-svc.emojivoto:8080 :path=/emojivoto.v1.EmojiService/FindByShortcode</span><br><span class="line">req id=0:1941 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled :method=POST :authority=emoji-svc.emojivoto:8080 :path=/emojivoto.v1.EmojiService/FindByShortcode</span><br><span class="line">rsp id=0:1941 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled :status=200 latency=467µs</span><br><span class="line">end id=0:1941 proxy=<span class="keyword">in</span>  src=10.244.3.112:55692 dst=10.244.2.72:8080 tls=disabled grpc-status=OK duration=54µs response-length=30B</span><br><span class="line">rsp id=0:4853 proxy=out src=10.244.3.112:44754 dst=10.244.2.72:8080 tls=no_identity :status=200 latency=2257µs</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlnyho1xoj31ib0u07dd.jpg" alt=""></p>
+<p>查看服务实时运行状态，基于路由请求的事件统计<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"># linkerd2 -n emojivoto top deploy</span><br><span class="line">Source                   Destination             Method     Path                                                     Count  Best   Worst  Last   Success Rate</span><br><span class="line">web-b4748444d-6krr2      emoji-5bb698556b-7n8cp  POST       /emojivoto.v1.EmojiService/ListAll                       30     907µs  4ms    3ms    100.00%</span><br><span class="line">vote-bot-f477cbb66-hpb6v web-b4748444d-6krr2     GET        /api/list                                                30     4ms    8ms    6ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      emoji-5bb698556b-7n8cp  POST       /emojivoto.v1.EmojiService/FindByShortcode               30     565µs  3ms    3ms    100.00%</span><br><span class="line">vote-bot-f477cbb66-hpb6v web-b4748444d-6krr2     GET        /api/vote                                                29     5ms    9s     7ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteDoughnut                 8      839µs  9s     3ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteWalkingMan               2      1ms    3ms    3ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteBulb                     2      708µs  2ms    2ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteBurrito                  2      916µs  2ms    2ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteTumblerGlass             2      945µs  2ms    2ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteHearNoEvil               2      774µs  2ms    2ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteRocket                   2      946µs  3ms    3ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VotePoliceman                2      2ms    3ms    3ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteTropicalDrink            2      1ms    3ms    3ms    100.00%</span><br><span class="line">web-b4748444d-6krr2      voting-695f74678b-67pf8 POST       /emojivoto.v1.VotingService/VoteStuckOutTongueWinkingEye 2      858µs  2ms    2ms    100.00%</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlnyvf35nj31nh0u0thz.jpg" alt=""></p>
+<p>来点击grafana的链接，诶？怎么连不进去。<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxlnz8f7cgj31ee06cjum.jpg" alt=""></p>
+<p>看看grafana的ingress呢？还是打不开（抱歉，忘记截图了，就是空白的页面，里面几个grafana的提示）</p>
+<p>在grafana的configmap里找到了罪魁祸首root_url<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxlnzl4cwbj31p20hun92.jpg" alt=""></p>
+<p>这是因为root_url是给Linkerd dashboard命令用的，他会自动创建一个代理使用本机的图形界面打开浏览器，把 <a href="http://127.0.0.1:xxxxx" target="_blank" rel="noopener">http://127.0.0.1:xxxxx</a> 传入，而这里用ingress所以用dashboard里的链接连不进grafana，只能注释root_url，之前我们已经创建了grafana的ingress来试试，可以看到界面了。但是linkerd dashboard里的grafana链接肯定是没办法用的。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxlnzygd9uj31u60u04qp.jpg" alt=""></p>
+<p>今天先到这里，下一期我们分析proxy的注入</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://link.hhtjim.com/163/38358219.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/diaspora.js"></script>
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-128257903-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+
+</html>
