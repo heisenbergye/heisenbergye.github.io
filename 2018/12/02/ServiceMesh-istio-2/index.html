@@ -82,7 +82,7 @@
 <p>上图中类型为 listchecker 的适配器中定义要使用的模板 listentry 里面定义了一个描述符，看源码就会知道里面定义的是 Instance 数据结构和 Handler 的接口。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtu9ysl34j31ko0jidlv.jpg" alt=""></p>
 <h3 id="配置模型"><a href="#配置模型" class="headerlink" title="配置模型"></a>配置模型</h3><h5 id="1-Handler-处理器"><a href="#1-Handler-处理器" class="headerlink" title="1. Handler 处理器"></a>1. Handler 处理器</h5><p>Mixer 使用的每个适配器都需要一些配置才能运行。Handler 就是为适配器提供完整配置。对同一个适配器可以有任意数量的 Handler，这样就可以在不同的场景下复用了。如下图中，staticversion 的 Handler 中，定义给类型为 listchecker 的适配器提供配置，根据参数列表中定义可知当 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。</p>
 <p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxts5ik4m9j310w0liae4.jpg" alt=""></p>
-<h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号，映射成适配器输入。</p>
+<h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号。</p>
 <p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts5vdf41j30ns0gi0uy.jpg" alt=""></p>
 <h5 id="3-Rule-规则"><a href="#3-Rule-规则" class="headerlink" title="3. Rule 规则"></a>3. Rule 规则</h5><p>通过创建 rules 实现告诉 Mixer 哪个 instance 在什么时候发送给哪个 handler。每个规则都会指定一个特定的处理程序和要发送给该处理程序的实例。当 Mixer 处理一个调用时，它会调用指定的处理程序，并给他一组特定的处理实例。规则中包含有一个 match 元素，用于前置检查，如果检查通过则会执行动作列表。动作中包含了一个实例列表，这个列表将会分发给 Handler。<br>比如下图中，如果检查到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion。 </p>
 <p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts65te28j318w0niq7n.jpg" alt=""></p>
