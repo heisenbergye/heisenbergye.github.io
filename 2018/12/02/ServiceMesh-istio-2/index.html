@@ -80,7 +80,7 @@
 </ul>
 <p>举个例子：一个类型为 listchecker 的适配器，且定义了要调用一个名为 listentry 的模板。<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxtt0j12mfj31km0miq9k.jpg" alt=""></p>
 <h3 id="Template-模板"><a href="#Template-模板" class="headerlink" title="Template 模板"></a>Template 模板</h3><p>通常对于进入到 Mesh 服务中的请求，Mixer 会发生两次调用，一次是 check，一次是 report。每一次调用，Mixer 都会调用一个或多个的适配器。不同的适配器需要不同的属性作为输入来处理，例如，日志适配器需要日志输入，metric 适配器需要 metric 数据作为输入，认证的适配器需要证书等等。因此 Mixer 还提供了一组模板，每个模板定义了从特定请求的属性到适配器输入的映射关系。一个适配器可以支持任意数量的模板，一个模板也可以被传递给一个或多个适配器。</p>
-<p>上图中类型为 listchecker 的适配器中定义要使用的模板 listentry 里面定义了一个描述符，看源码就会知道里面定义的是 Instance 数据结构和 Handler 的接口。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtu9ysl34j31ko0jidlv.jpg" alt=""></p>
+<p>上图中类型为 listchecker 的适配器中定义要使用的模板 listentry 里面定义了一个描述符（如下图所示），看源码就会知道里面定义的是 Instance 数据结构和 Handler 的接口。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtu9ysl34j31ko0jidlv.jpg" alt=""></p>
 <h3 id="配置模型"><a href="#配置模型" class="headerlink" title="配置模型"></a>配置模型</h3><h5 id="1-Handler-处理器"><a href="#1-Handler-处理器" class="headerlink" title="1. Handler 处理器"></a>1. Handler 处理器</h5><p>Mixer 使用的每个适配器都需要一些配置才能运行。Handler 就是为适配器提供完整配置。对同一个适配器可以有任意数量的 Handler，这样就可以在不同的场景下复用了。如下图中，staticversion 的 Handler 中，定义给类型为 listchecker 的适配器提供配置，根据参数列表中定义可知当 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。</p>
 <p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxts5ik4m9j310w0liae4.jpg" alt=""></p>
 <h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号得值。</p>
