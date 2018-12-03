@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="" class="loading">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heisenbergye的博客</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate">
+    <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
+    <meta name="description" content="Heisenbergye,那么我们今天来看下 Istio 的可观测性的实现。首先要说的就是 Mixer 组件，它是一个独立于平台的组件，负责在 Istio 中执行访问控制和使用策略，并从 Envoy Sidecar 和其他服,"> 
+    <meta name="author" content="Zhan Ye"> 
+    <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+    <link rel="stylesheet" href="/css/diaspora.css">
+</head>
+</html>
+<body class="loading">
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">ServiceMesh-istio-2</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">ServiceMesh-istio-2</h1>
+        <div class="stuff">
+            <span>十二月 02, 2018</span>
+            
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Istio/">Istio</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Kubernetes/">Kubernetes</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Observability/">Observability</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Service-Mesh/">Service Mesh</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/monitor/">monitor</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/tracing/">tracing</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>那么我们今天来看下 Istio 的可观测性的实现。首先要说的就是 Mixer 组件，它是一个独立于平台的组件，负责在 Istio 中执行访问控制和使用策略，并从 Envoy Sidecar 和其他服务收集遥测数据。</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtkv0wyyoj30vw0ocgow.jpg" alt=""></p>
+<p>Mixer提供三个核心功能：</p>
+<ol>
+<li>Precondition Checking: 前置条件检查。在服务响应外部请求前，通过Envoy Sidecar 向 Mixer 发送 Check 请求，检查该请求是否满足一定的前提条件，包括黑白名单检查、ACL 检查等。</li>
+<li>Quota Management: 配额管理。配额被用作相对简单的资源管理工具，使服务能够在多个维度上分配和释放配额，避免多个请求争抢资源。</li>
+<li>Telemetry Reporting: 遥测报告。当服务处理完请求后，通过 Envoy Sidecar 向 Mixer 上报响应时间、日志、度量等信息，生成日志记录，监控，跟踪和计费流。</li>
+</ol>
+<p>Mixer 还是高度模块化和可扩展的组件，他的一个关键功能就是通过适配器模型把不同后端的策略和遥测收集系统的细节抽象出来，使得 Istio 可以与一组开放式基础设施后端进行交互。</p>
+<p>从上图中我们还可以看出，网格中每个服务实例旁的 Sidecar 具有本地缓存，从而可以在缓存中执行相对较大比例的前提条件检查，减少 Mixer 的调用频率。Mixer 可用作 Sidecar 的高度扩展且高度可用的二级缓存，有助于减少对后端的调用频率，并且有时可以减少发送到后端的数据量（通过本地聚合），而且即使在后端无响应时也能继续运行，从而有助于屏蔽基础设施后端故障。</p>
+<h3 id="Mixer-工作流程概括"><a href="#Mixer-工作流程概括" class="headerlink" title="Mixer 工作流程概括"></a>Mixer 工作流程概括</h3><p>Mixer 本质上是一个属性处理机。网格中每个服务实例旁的 Envoy Sidecar 提供 request 级别的属性数据，把每个请求和响应以键值对的形式发送给 Mixer。Mixer 再根据配置模型把属性集转化为结构型值，并把这些值调度到一组适配器上，适配器再把遥测数据发送给基础设施后端实现日志记录、监控指标采集展示、配额管理、ACL检查等功能。</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxthpsoh99j30yz0u0qca.jpg" alt=""></p>
+<h3 id="Attribute-属性"><a href="#Attribute-属性" class="headerlink" title="Attribute 属性"></a>Attribute 属性</h3><p>属性是有名称和类型的元数据，用于描述特定服务请求或请求环境的属性的一小段数据，比如：请求响应代码码、响应时间、请求来自哪里等。Istio 中的主要属性是由 Envoy 生成，但专用的 Mixer 适配器也可以生成属性。Istio 用属性来控制服务在 Service Mesh 中运行时行为。</p>
+<p><a href="https://istio.io/docs/reference/config/policy-and-telemetry/attribute-vocabulary/" target="_blank" rel="noopener">通用基准属性集</a> 和 <a href="https://istio.io/docs/reference/config/policy-and-telemetry/expression-language/" target="_blank" rel="noopener">属性表达式</a></p>
+<h3 id="Adapter-适配器"><a href="#Adapter-适配器" class="headerlink" title="Adapter 适配器"></a>Adapter 适配器</h3><p>上面我们提到 Mixer 使用通用插件模型实现基础设施后端的灵活性和可扩展性，每个插件都被称为 Adapter，Mixer 通过适配器与不同的基础设施后端连接，这些后端旨在提供用于构建服务的支持功能，包括访问控制系统，遥测捕获系统，配额执行系统，计费系统等等。通过配置能够决定在运行时使用的确切的适配器套件，并且可以轻松扩展到新的或定制的基础设施后端，这样也减少了系统的复杂性。</p>
+<p>整体架构图：<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxtjed8y9nj31k80u0160.jpg" alt=""></p>
+<p>Istio内置的部分adapters举例如下：</p>
+<ul>
+<li>circonus：一个微服务监控分析平台。</li>
+<li>cloudwatch：一个针对AWS云资源监控的工具。</li>
+<li>fluentd：一款开源的日志采集工具。</li>
+<li>prometheus：一款开源的时序数据库，非常适合用来存储监控指标数据。</li>
+<li>statsd：一款采集汇总应用指标的工具。</li>
+<li>stdio：stdio适配器使Istio能将日志和metrics输出到本地，结合内置的ES、Grafana就可以查看相应的日志或指标了。</li>
+</ul>
+<p>举个例子：一个类型为 listchecker 的适配器，且定义了要调用一个名为 listentry 的模板。<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxtt0j12mfj31km0miq9k.jpg" alt=""></p>
+<h3 id="Template-模板"><a href="#Template-模板" class="headerlink" title="Template 模板"></a>Template 模板</h3><p>通常对于进入到 Mesh 服务中的请求，Mixer 会发生两次调用，一次是 check，一次是 report。每一次调用，Mixer 都会调用一个或多个的适配器。不同的适配器需要不同的属性作为输入来处理，例如，日志适配器需要日志输入，metric 适配器需要 metric 数据作为输入，认证的适配器需要证书等等。因此 Mixer 还提供了一组模板，每个模板定义了从特定请求的属性到适配器输入的映射关系。一个适配器可以支持任意数量的模板，一个模板也可以被传递给一个或多个适配器。</p>
+<p>上图中类型为 listchecker 的适配器中定义要使用的模板 listentry 里面定义了一个描述符，看源码就会知道里面定义的是 Instance 数据结构和 Handler 的接口。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtu9ysl34j31ko0jidlv.jpg" alt=""></p>
+<h3 id="配置模型"><a href="#配置模型" class="headerlink" title="配置模型"></a>配置模型</h3><h5 id="1-Handler-处理器"><a href="#1-Handler-处理器" class="headerlink" title="1. Handler 处理器"></a>1. Handler 处理器</h5><p>Mixer 使用的每个适配器都需要一些配置才能运行。Handler 就是为适配器提供完整配置。对同一个适配器可以有任意数量的 Handler，这样就可以在不同的场景下复用了。如下图中，staticversion 的 Handler 中，定义给类型为 listchecker 的适配器提供配置，根据参数列表中定义可知当 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。</p>
+<p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxts5ik4m9j310w0liae4.jpg" alt=""></p>
+<h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号，映射成适配器输入。</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts5vdf41j30ns0gi0uy.jpg" alt=""></p>
+<h5 id="3-Rule-规则"><a href="#3-Rule-规则" class="headerlink" title="3. Rule 规则"></a>3. Rule 规则</h5><p>通过创建 rules 实现告诉 Mixer 哪个 instance 在什么时候发送给哪个 handler。每个规则都会指定一个特定的处理程序和要发送给该处理程序的实例。当 Mixer 处理一个调用时，它会调用指定的处理程序，并给他一组特定的处理实例。规则中包含有一个 match 元素，用于前置检查，如果检查通过则会执行动作列表。动作中包含了一个实例列表，这个列表将会分发给 Handler。<br>比如下图中，如果检查到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion。 </p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts65te28j318w0niq7n.jpg" alt=""></p>
+<p>所以小结一下这个过程：当应用实例收到请求被envoy拦截，envoy根据请求生成指定的属性调用 Mixer 做前置检查，Mixer 进行前置条件检查和配额检查，根据 rule 定义如果查到到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion，Handler 将 Instance 获取到的源实例版本号传递给 adapter: listchecker，要求 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。（完整一点）…… 接着 Envoy 分析返回结果后，决定执行请求或拒绝请求。若可以执行请求则执行请求。请求完成后再向 Mixer gRPC 服务发起 Report rpc 请求，上报遥测数据。基础设施后端会基于遥测数据做进一步处理。</p>
+<p>希望到这里能让你觉得比官网说的明白。时间还早把 tracing 也说了。</p>
+<h3 id="Tracing-追踪"><a href="#Tracing-追踪" class="headerlink" title="Tracing 追踪"></a>Tracing 追踪</h3><p>链路追踪是一个很强大的工具，可以帮助我们对应用做性能分析和快速的故障定位，在 Linkerd2.0 中我们也见识过。</p>
+<h4 id="Jaeger"><a href="#Jaeger" class="headerlink" title="Jaeger"></a>Jaeger</h4><p>Istio 默认支持 Jaeger 做分布式追踪。Jaeger 是 Uber 推出的一款开源分布式追踪系统，兼容 OpenTracing API。使用 Jaeger 可以非常直观的展示整个分布式系统的调用链，由此可以很好发现和解决问题。</p>
+<p>专业名词解析：</p>
+<ul>
+<li>Trace：追踪对象，一个Trace代表了一个服务或者流程在系统中的执行过程，如：test.com，redis，mysql等执行过程。一个Trace由多个span组成。</li>
+<li>span：记录Trace在执行过程中的信息，如：查询的sql，请求的HTTP地址，RPC调用，开始、结束、间隔时间等。</li>
+<li>无限极分类：服务与服务之间使用无限极分类的方式，通过HTTP头部或者请求地址传输到最低层，从而把整个调用链串起来。</li>
+</ul>
+<p>架构图及组件介绍：<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxty0kav89j31j80tidqh.jpg" alt=""></p>
+<ul>
+<li><p>Jaeger-Agent 是一个网络守护进程，监听通过 UDP 发送过来的 Span，它会将其批量发送给 collector。按照设计，Agent 要被部署到所有主机上，作为基础设施。Agent 将 collector 和客户端之间的路由与发现机制抽象了出来。</p>
+</li>
+<li><p>Jaeger-Collector 从 Jaeger Agent 接收 Trace，并通过一个处理管道对其进行处理。目前的管道会校验 Trace、建立索引、执行转换并最终进行存储。存储是一个可插入的组件，现在支持 elasticsearch、Cassandra 或 Kafka。</p>
+</li>
+<li><p>Jaeger-Query 服务会从存储中检索 Trace 并通过 UI 界面进行展现，该 UI 界面通过 React 技术实现。</p>
+</li>
+</ul>
+<p>注意：istio 中 Jaeger 还是个 all-in-one 的配置而且 span 都存在内存里，不能直接上生产，上生产还需要用 elasticsearch 等来持久化数据，还要对 Jaeger-collector 要收集 envoy 的请求数据，所以要开启 HPA 应对高并发场景。</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxty1wgfuej30ya0as3zv.jpg" alt=""></p>
+<p>在 Bookinfo 应用启动运行之后，连续访问100次，返回200为正常，会生成跟踪数据。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ export GATEWAY_URL=$(kubectl -n istio-system get po -l istio=ingressgateway -o go-template=&apos;&#123;&#123;range .items&#125;&#125;&#123;&#123;.status.hostIP&#125;&#125;&#123;&#123;end&#125;&#125;&apos;)</span><br><span class="line">$ export HTTP2_PORT=$(kubectl -n istio-system get svc istio-ingressgateway -o go-template=&apos;&#123;&#123;range .spec.ports&#125;&#125;&#123;&#123;if eq .name &quot;http2&quot;&#125;&#125;&#123;&#123;.nodePort&#125;&#125;&#123;&#123;end&#125;&#125;&#123;&#123;end&#125;&#125;&apos;)</span><br><span class="line">$ for i in &#123;1..100&#125;; do curl -o /dev/null -s -w &quot;%&#123;http_code&#125;\n&quot; http://$&#123;GATEWAY_URL&#125;:$&#123;HTTP2_PORT&#125;/productpage; done</span><br></pre></td></tr></table></figure></p>
+<p>在 Jaeger dashboard 左侧版面中，从 Service 下拉列表中选择 productpage，点击 Find Traces 按钮，就会看到类似下图的内容：<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtxqzsgkfj31fe0u04qp.jpg" alt=""></p>
+<p>点击第一条跟踪信息，这是最后一次刷新 /productpage 页面的信息。显示的内容会跟下图类似：</p>
+<p><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtxrhpkrgj31y40rmqp4.jpg" alt=""></p>
+<p>如上图所示，跟踪信息是由一系列的 Span 组成的，每个 Span 对应着 /productpage 请求过程中 Bookinfo 服务的调用。目标服务（右侧）的标签标识了每一行的耗时。第一行代表了外部调用到 productpage 服务的过程。istio-ingressgateway 是外部请求的入口。从图中我们可以看到，整个请求花费了 39.42 毫秒。在执行过程中，productpage 调用了 details 服务，消耗了 3.76 毫秒；接下来调用了 reviews 服务。reviews 服务消耗的了大概 15.89 毫秒。其中还包含了 reviews 对 ratings 服务所占用的 2.34 毫秒。</p>
+<p>服务网格中是怎么实现的呢？</p>
+<p>因为每个 Envoy Sidecar 代理了进出服务的所有流量，当有服务发起外部调用时，客户端（请求发起方） Envoy 会创建一个新的 span。一个 span 代表一组微服务之间的完整交互过程，从客户端发出请求开始到接收到服务端的响应为止。在服务交互过程中，客户端会记录请求的发起时间和响应的接收时间，服务器端Envoy 会记录请求的接收时间和响应的返回时间。</p>
+<p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxtzqt2nldj31060ie40j.jpg" alt=""></p>
+<p>每个 Envoy 都会将自己的 span 视图信息发布到分布式追踪系统。当一个服务处理请求时，可能需要调用其他服务，从而导致因果关联的 span 的创建，形成完整的 trace。这就需要由应用来从请求消息中收集和转发下列 Header 在通信链路中的Envoy，可以截取、处理、转发相应的Header。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">x-request-id</span><br><span class="line">x-b3-traceid</span><br><span class="line">x-b3-spanid</span><br><span class="line">x-b3-parentspanid</span><br><span class="line">x-b3-sampled</span><br><span class="line">x-b3-flags</span><br><span class="line">x-ot-span-context</span><br></pre></td></tr></table></figure></p>
+<p>比如我们看 productpage 这段创建span 在 HTTP 请求中获取 x-b3-*** 头部中的值：<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxtzfmspybj30u00zxwpq.jpg" alt=""></p>
+<p>details 也是获取头部的值：<br><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxtz81beyxj30qm0sijv9.jpg" alt=""></p>
+<h4 id="SkyWalking"><a href="#SkyWalking" class="headerlink" title="SkyWalking"></a>SkyWalking</h4><p>Apache SkyWalking ，它是一款优秀的国产 APM 工具，包括了分布式追踪、性能指标分析、应用和服务依赖分析等。从6.0.0开始也支持 Istio，他是通过 bypass Adapter 接入 Mixer 收集遥测数据进行分析，今后应用上了 Mesh 就不再需要植入 java 探针就可以通过 skywalking 来 tracing，实现代码无侵入。</p>
+<p><img src="https://ws4.sinaimg.cn/large/006tNbRwgy1fxtvqwim0nj313x0u044d.jpg" alt=""></p>
+<h4 id="最后的硬核广告-————-Robotbot"><a href="#最后的硬核广告-————-Robotbot" class="headerlink" title="最后的硬核广告 ———— Robotbot"></a>最后的硬核广告 ———— Robotbot</h4><p><a href="https://github.com/TinyAllen/rocketbot" target="_blank" rel="noopener">Robotbot</a> (火箭靴)是由 DaoCloud Labs 基于 VUE 框架，为 SkyWalking 贡献的开源 UI 项目，很酷炫很 fashion。</p>
+<ul>
+<li><p>Dashboard:<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxtvgpl4acj31e50u0tkl.jpg" alt=""></p>
+</li>
+<li><p>Topology:<br><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxtvgr0rahj31ig0u0wkn.jpg" alt=""></p>
+</li>
+<li><p>Trace:<br><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxtvgtespbj31j20u010d.jpg" alt=""></p>
+</li>
+</ul>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>前面我们说过 Linkerd2.0 中，是由 proxy 暴露服务的 metrics，所有 Metrics 会被收集并存放在 prometheus 中，该 prometheus 实例专用来处理 Linkerd 生成的数据。<br>Istio 通过 Mixer 实现看起来复杂，但是自由度会更高，使得基础设施后端很灵活的接入 mesh。而且现在又有 Kiali 把原本分散的监控、分布式追踪，配置的查看都整合在了一起，功劳不小。日志还没讲，有时间还会继续扩充本文。</p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="http://link.hhtjim.com/163/477839556.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/diaspora.js"></script>
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-128257903-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+
+</html>
