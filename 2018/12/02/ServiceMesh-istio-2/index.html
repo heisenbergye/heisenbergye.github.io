@@ -60,10 +60,11 @@
 <li>Quota Management: 配额管理。配额被用作相对简单的资源管理工具，使服务能够在多个维度上分配和释放配额，避免多个请求争抢资源。</li>
 <li>Telemetry Reporting: 遥测报告。当服务处理完请求后，通过 Envoy Sidecar 向 Mixer 上报响应时间、日志、度量等信息，生成日志记录，监控，跟踪和计费流。</li>
 </ol>
-<p>Mixer 还是高度模块化和可扩展的组件，他的一个关键功能就是通过适配器模型把不同后端的策略和遥测收集系统的细节抽象出来，使得 Istio 可以与一组开放式基础设施后端进行交互。</p>
+<p>Mixer 还是高度模块化和可扩展的组件，他的一个关键功能就是通过适配器模型把不同后端的策略和遥测收集系统的细节抽象出来，使得 Istio 可以与一组开放式基础设施后端进行交互。<br>注：基础设施后端旨在提供用于构建服务的支持功能。它们包括访问控制系统，遥测捕获系统，配额执行系统，计费系统等等。</p>
 <p>从上图中我们还可以看出，网格中每个服务实例旁的 Sidecar 具有本地缓存，从而可以在缓存中执行相对较大比例的前提条件检查，减少 Mixer 的调用频率。Mixer 可用作 Sidecar 的高度扩展且高度可用的二级缓存，有助于减少对后端的调用频率，并且有时可以减少发送到后端的数据量（通过本地聚合），而且即使在后端无响应时也能继续运行，从而有助于屏蔽基础设施后端故障。</p>
-<h3 id="Mixer-工作流程概括"><a href="#Mixer-工作流程概括" class="headerlink" title="Mixer 工作流程概括"></a>Mixer 工作流程概括</h3><p>Mixer 本质上是一个属性处理机。网格中每个服务实例旁的 Envoy Sidecar 提供 request 级别的属性数据，把每个请求和响应以键值对的形式发送给 Mixer。Mixer 再根据配置模型把属性集转化为结构型值，并把这些值调度到一组适配器上，适配器再把遥测数据发送给基础设施后端实现日志记录、监控指标采集展示、配额管理、ACL检查等功能。</p>
+<h5 id="Mixer-工作流程概括"><a href="#Mixer-工作流程概括" class="headerlink" title="Mixer 工作流程概括"></a>Mixer 工作流程概括</h5><p>Mixer 本质上是一个属性处理机。网格中每个服务实例旁的 Envoy Sidecar 向 Mixer 发送 Check 请求并提供 request 级别的属性数据发送给 Mixer，Mixer 再根据配置模型把属性集转化为结构型值，并把这些值调度到一组适配器上，做前置条件检查和配置管理，检查通过后才能响应。当服务处理完请求后，通过 Envoy Sidecar 向 Mixer 发送 Report 请求上报遥测数据，最后适配器把遥测数据发送给基础设施后端实现日志记录、监控指标采集展示、配额管理、ACL检查等功能。</p>
 <p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxthpsoh99j30yz0u0qca.jpg" alt=""></p>
+<p>所以除了上面我们说的基础设施后端，这里又出现了3个新名词，属性、适配器和配置模型。</p>
 <h3 id="Attribute-属性"><a href="#Attribute-属性" class="headerlink" title="Attribute 属性"></a>Attribute 属性</h3><p>属性是有名称和类型的元数据，用于描述特定服务请求或请求环境的属性的一小段数据，比如：请求响应代码码、响应时间、请求来自哪里等。Istio 中的主要属性是由 Envoy 生成，但专用的 Mixer 适配器也可以生成属性。Istio 用属性来控制服务在 Service Mesh 中运行时行为。</p>
 <p><a href="https://istio.io/docs/reference/config/policy-and-telemetry/attribute-vocabulary/" target="_blank" rel="noopener">通用基准属性集</a> 和 <a href="https://istio.io/docs/reference/config/policy-and-telemetry/expression-language/" target="_blank" rel="noopener">属性表达式</a></p>
 <h3 id="Adapter-适配器"><a href="#Adapter-适配器" class="headerlink" title="Adapter 适配器"></a>Adapter 适配器</h3><p>上面我们提到 Mixer 使用通用插件模型实现基础设施后端的灵活性和可扩展性，每个插件都被称为 Adapter，Mixer 通过适配器与不同的基础设施后端连接，这些后端旨在提供用于构建服务的支持功能，包括访问控制系统，遥测捕获系统，配额执行系统，计费系统等等。通过配置能够决定在运行时使用的确切的适配器套件，并且可以轻松扩展到新的或定制的基础设施后端，这样也减少了系统的复杂性。</p>
@@ -82,11 +83,11 @@
 <p>上图中类型为 listchecker 的适配器中定义要使用的模板 listentry 里面定义了一个描述符，看源码就会知道里面定义的是 Instance 数据结构和 Handler 的接口。<br><img src="https://ws2.sinaimg.cn/large/006tNbRwgy1fxtu9ysl34j31ko0jidlv.jpg" alt=""></p>
 <h3 id="配置模型"><a href="#配置模型" class="headerlink" title="配置模型"></a>配置模型</h3><h5 id="1-Handler-处理器"><a href="#1-Handler-处理器" class="headerlink" title="1. Handler 处理器"></a>1. Handler 处理器</h5><p>Mixer 使用的每个适配器都需要一些配置才能运行。Handler 就是为适配器提供完整配置。对同一个适配器可以有任意数量的 Handler，这样就可以在不同的场景下复用了。如下图中，staticversion 的 Handler 中，定义给类型为 listchecker 的适配器提供配置，根据参数列表中定义可知当 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。</p>
 <p><img src="https://ws3.sinaimg.cn/large/006tNbRwgy1fxts5ik4m9j310w0liae4.jpg" alt=""></p>
-<h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号。</p>
+<h5 id="2-Instance-实例"><a href="#2-Instance-实例" class="headerlink" title="2. Instance 实例"></a>2. Instance 实例</h5><p>通过配置 Instance 将请求中的属性映射成为适配器的输入。如下图中，一个叫 lisentry 的 Instance 要从属性中获取源实例版本号得值。</p>
 <p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts5vdf41j30ns0gi0uy.jpg" alt=""></p>
 <h5 id="3-Rule-规则"><a href="#3-Rule-规则" class="headerlink" title="3. Rule 规则"></a>3. Rule 规则</h5><p>通过创建 rules 实现告诉 Mixer 哪个 instance 在什么时候发送给哪个 handler。每个规则都会指定一个特定的处理程序和要发送给该处理程序的实例。当 Mixer 处理一个调用时，它会调用指定的处理程序，并给他一组特定的处理实例。规则中包含有一个 match 元素，用于前置检查，如果检查通过则会执行动作列表。动作中包含了一个实例列表，这个列表将会分发给 Handler。<br>比如下图中，如果检查到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion。 </p>
 <p><img src="https://ws1.sinaimg.cn/large/006tNbRwgy1fxts65te28j318w0niq7n.jpg" alt=""></p>
-<p>所以小结一下这个过程：当应用实例收到请求被envoy拦截，envoy根据请求生成指定的属性调用 Mixer 做前置检查，Mixer 进行前置条件检查和配额检查，根据 rule 定义如果查到到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion，Handler 将 Instance 获取到的源实例版本号传递给 adapter: listchecker(template已经定义好数据格式)，要求 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。（完整一点）…… 接着 Envoy 分析返回结果后，决定执行请求或拒绝请求。若可以执行请求则执行请求。请求完成后再向 Mixer gRPC 服务发起 Report rpc 请求，上报遥测数据。基础设施后端会基于遥测数据做进一步处理。</p>
+<h5 id="Mixer-工作流程总结"><a href="#Mixer-工作流程总结" class="headerlink" title="Mixer 工作流程总结"></a>Mixer 工作流程总结</h5><p>还是以上面这个例子。当应用实例收到请求被 envoy 拦截，envoy 根据请求生成指定的属性并向 Mixer 发送 Check 请求，Mixer 进行前置条件检查和配额检查，根据 rule 定义如果查到到目标实例的标签“app“的值为 ratings，才把 Instance: lisentry 分发给 Handler: staticversion，Handler 将 Instance 获取到的源实例版本号的值传递给 adapter: listchecker (template已经初始化好数据格式)，要求 Adapter 检查到配置不使用黑名单模式且输入值存在于列表之中（v1或v2），才返回成功。接着 Envoy 分析返回结果，决定执行请求或拒绝请求。若可以执行请求则执行请求。请求完成后 envoy 再向 Mixer gRPC 服务发起 Report rpc 请求，上报遥测数据。最后适配器再把遥测数据发送给基础设施后端做进一步处理。</p>
 <p>希望到这里能让你觉得比官网说的明白。时间还早把 tracing 也说了。</p>
 <h3 id="Tracing-追踪"><a href="#Tracing-追踪" class="headerlink" title="Tracing 追踪"></a>Tracing 追踪</h3><p>链路追踪是一个很强大的工具，可以帮助我们对应用做性能分析和快速的故障定位，在 Linkerd2.0 中我们也见识过。</p>
 <h4 id="Jaeger"><a href="#Jaeger" class="headerlink" title="Jaeger"></a>Jaeger</h4><p>Istio 默认支持 Jaeger 做分布式追踪。Jaeger 是 Uber 推出的一款开源分布式追踪系统，兼容 OpenTracing API。使用 Jaeger 可以非常直观的展示整个分布式系统的调用链，由此可以很好发现和解决问题。</p>
