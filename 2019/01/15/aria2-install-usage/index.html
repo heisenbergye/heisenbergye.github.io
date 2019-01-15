@@ -66,7 +66,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install aria2</span><br></pre></td></tr></table></figure>
 <p>配置 aria2，注意配置文件要放在上面的路径上（~/.aria2/aria2.conf），aria2 在执行时会检查这个路径，如果这个路径存在配置文件，就不用自己再指定配置文件了。这样还能方便设置开机自启动 aria2。而 aria2.session 文件用于保存下载进度等信息，都需要手动创建，这里我们把仓库中准备好的模板直接复制到指定路径。rm_bt.sh 和 rm.sh 用于在下载完成后自动删除 *.aria2 文件</p>
 <p>依次执行下面命令：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git clone </span><br><span class="line">mkdir ~/.aria2</span><br><span class="line">cp aria2.conf aria2.session rm_bt.sh rm.sh ~/.aria2/</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/heisenbergye/aria2.git</span><br><span class="line">mkdir ~/.aria2</span><br><span class="line">cp aria2.conf aria2.session rm_bt.sh rm.sh ~/.aria2/</span><br></pre></td></tr></table></figure>
 <p>修改配置文件aria2.conf，按 “<xxx>” 中提示内容修改。</xxx></p>
 <p>如果按照上面的步骤配置，启动 aria2 只需执行下面命令</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aria2c -D</span><br></pre></td></tr></table></figure>
