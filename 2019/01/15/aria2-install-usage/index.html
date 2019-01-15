@@ -26,7 +26,7 @@
     <div class="bar" style="width: 0;"></div>
     <a class="icon-home image-icon" href="javascript:;"></a>
     <div title="播放/暂停" class="icon-play"></div>
-    <h3 class="subtitle">前言</h3>
+    <h3 class="subtitle">MAC安装aria2及使用</h3>
     <div class="social">
         <!--<div class="like-icon">-->
             <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
@@ -43,23 +43,61 @@
     <div class="section">
         <div class="article">
     <div class="main">
-        <h1 class="title">前言</h1>
+        <h1 class="title">MAC安装aria2及使用</h1>
         <div class="stuff">
-            <span>十月 28, 2018</span>
+            <span>一月 15, 2019</span>
             
-  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/blog/">blog</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/heisenberg/">heisenberg</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/zhan-ye/">zhan ye</a></li></ul>
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Aria2/">Aria2</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Baidu-WangPan/">Baidu WangPan</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/Thunder/">Thunder</a></li></ul>
 
 
         </div>
         <div class="content markdown">
-            <p>&#160; &#160; &#160; 小店从今儿起就算开张了，感谢光临，还请老板们多多关照，这后台流量数据就靠大家给捧场了。作为开篇嘛，选了当前较热的歌曲，李荣浩《年少有为》。<br>&#160; &#160; &#160; 工作到现在我一直都习惯记笔记，什么OneNote、有道云笔记等等，直到前几个月才有想法要写博客，一是看到同事也是好朋友这么玩，觉得很cool；二是想梳理一下知识体系，毕竟要给别人看自然就不能像笔记写的那么随意了，所以也算逼迫自己形成习惯。考虑再三，选择了全球最大的同性交友平台GitHub，不要问我为什么不租云主机，买个域名什么的，首先是经费有限（投入私有云），再者第一次做能做的好看而且内容质量对得起大众，以后慢慢迁移优化吧。当然也不是完全都会写技术吧，太枯燥恐怕就再吸也不到流量了，以后会写点读后感、电影评论、书画评论、游记、健身等等。于是趁着休病假就把这桩儿给打好。<br>&#160; &#160; &#160; 时候不早了，明天将进入正篇。立个flag，珍惜时间，积极治疗懒癌。最后用宋代朱子的一首诗结束本篇：</p>
-<blockquote>
-<p>少年易老学难成,<br>一寸光阴不可轻。<br>未觉池塘春草梦,<br>阶前梧叶已秋声。</p>
-</blockquote>
-
+            <p>国内的下载工具，一点都不纯粹，总要植入广告、商城等等无关的功能，像某度网盘这种还会搞限速，很烦。好在有 Aria2 这神器。Aria2 是一款轻量的、支持多协议以及多线程的下载工具，它同时支持了 HTTP/HTTPS, FTP, SFTP, BitTorrent 和 Metalink 多种下载方式。它是用命令行交互的，但是已经有人为它开发了交互界面，不用担心太难操作。下面跟着步骤来，安装成功后从此告别限速。</p>
+<ol>
+<li>安装 Homebrew</li>
+</ol>
+<p>Homebrew 是 macOS 上著名的包管理工具, 它可以方便地对应用以及各种插件进行管理。确保已经安装 Xcode 后在 Terminal（终端）执行以下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/usr/bin/ruby -e &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&quot;</span><br></pre></td></tr></table></figure>
+<p>更新 Homebrew，依次执行下面命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew update</span><br><span class="line">brew upgrade</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>安装 aria2</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install aria2</span><br></pre></td></tr></table></figure>
+<p>配置 aria2，注意配置文件要放在上面的路径上（~/.aria2/aria2.conf），aria2 在执行时会检查这个路径，如果这个路径存在配置文件，就不用自己再指定配置文件了。这样还能方便设置开机自启动 aria2。而 aria2.session 文件用于保存下载进度等信息，都需要手动创建，这里我们把仓库中准备好的模板直接复制到指定路径。rm_bt.sh 和 rm.sh 用于在下载完成后自动删除 *.aria2 文件</p>
+<p>依次执行下面命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git clone </span><br><span class="line">mkdir ~/.aria2</span><br><span class="line">cp aria2.conf aria2.session rm_bt.sh rm.sh ~/.aria2/</span><br></pre></td></tr></table></figure>
+<p>修改配置文件aria2.conf，按 “<xxx>” 中提示内容修改。</xxx></p>
+<p>如果按照上面的步骤配置，启动 aria2 只需执行下面命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aria2c -D</span><br></pre></td></tr></table></figure>
+<p>如果配置文件放在其他路径，启动 aria2 需要指定配置文件的路径</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">aria2c --conf-path=&quot;/xxxxx/xxxxxx/aria2.conf&quot; -D</span><br></pre></td></tr></table></figure>
+<p>至此，aria2 已经可以启动使用了，如果不习惯使用命令行，可以使用 GUI（用户界面）。</p>
+<p>设置开机自启动，将 plist 文件 copy 到 “~/Library/LaunchAgents/” 路径下，按 “<xxx>” 中提示内容修改。</xxx></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cp aria2.plist ~/Library/LaunchAgents/</span><br></pre></td></tr></table></figure>
+<p>修改文件权限</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chmod 644 ~/Library/LaunchAgents/aria2.plist</span><br></pre></td></tr></table></figure>
+<p>添加自启动项</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">launchctl load ~/Library/LaunchAgents/aria2.plist</span><br></pre></td></tr></table></figure>
+<p>启动自启动项</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">launchctl start aria2</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>安装 Chrome 插件</li>
+</ol>
+<p>需要安装的插件见chrome-pluginlist.txt</p>
+<ol start="4">
+<li>安装 webui-aria2</li>
+</ol>
+<p>这个 GUI 其实就是个网页。进入 webui-aria2 项目页，找到绿色的clone or download按钮，点击选择Download ZIP下载后解压。把解压后的文件夹移到自己想要放的位置，找到并打开 /src/js/services/configuration.js 文件，根据先前设置的rpc-secret=&lt;自定义密码&gt;，修改token:&lt;自定义密码&gt;。</p>
+<p>使用nodejs启动</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">node node-server.js</span><br></pre></td></tr></table></figure>
+<ol start="5">
+<li>更新 BT-tracker</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh update-bt-tracker.sh</span><br></pre></td></tr></table></figure>
             <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
             <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
-                <source type="audio/mpeg" src="http://link.hhtjim.com/163/1293886117.mp3">
+                <source type="audio/mpeg" src="https://link.hhtjim.com/163/1306517181.mp3">
             </audio>
             
         </div>
