@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="" class="loading">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Heisenbergye的博客</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="google" content="notranslate">
+    <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
+    <meta name="description" content="Heisenbergye,随着 IT 技术的不断演进，从 物理机 -&amp;gt; 虚拟化 -&amp;gt; 云平台 -&amp;gt; 容器 -&amp;gt; Serverless，整个演进的方向主要包括以下几个特点：
+
+资源利用率越来越高
+高可扩,"> 
+    <meta name="author" content="Zhan Ye"> 
+    <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
+    <link rel="icon" href="/img/favicon.png"> 
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+    <link rel="stylesheet" href="/css/diaspora.css">
+</head>
+</html>
+<body class="loading">
+    <div id="loader"></div>
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">knative学习-01</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
+        <div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
+        </div>
+    </div>
+    <div class="scrollbar"></div>
+</div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">knative学习-01</h1>
+        <div class="stuff">
+            <span>九月 25, 2019</span>
+            
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/istio/">istio</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/knative/">knative</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/kubernetes/">kubernetes</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/severless/">severless</a></li></ul>
+
+
+        </div>
+        <div class="content markdown">
+            <p>随着 IT 技术的不断演进，从 <code>物理机 -&gt; 虚拟化 -&gt; 云平台 -&gt; 容器 -&gt; Serverless</code>，整个演进的方向主要包括以下几个特点：</p>
+<ul>
+<li>资源利用率越来越高</li>
+<li>高可扩展性，具有弹性伸缩能力</li>
+<li>从集中式向分布式演进，提倡应用架构微服务化</li>
+<li>开发人员不关心基础架构，更多关注在业务代码上</li>
+<li>提倡自动化，尽可能减少人工干预</li>
+<li>运维工作不断简化，减少宕机时间</li>
+</ul>
+<p>而无服务框架（Serverless）是近年来迅速兴起的一个技术概念，它主要具有以下特点：</p>
+<ul>
+<li>实现了细粒度的计算资源分配。</li>
+<li>不需要预先分配资源。</li>
+<li>具备真正意义上的高度扩容和弹性。</li>
+<li>按需使用，按需计费。</li>
+</ul>
+<p>但是由于 Serverless 一直缺乏统一认知以及相应的标准，Serverless 应用无法适应所有的云平台，选用了某个厂商的平台，就必须使用该厂商提供的配套服务，所以推动成效甚微。通常我们认为Serverless包含两个部分，FaaS和BaaS，当前流行的开源FaaS平台有OpenFaas、Kuberless、Fission、openWhisk，Knative。</p>
+<p>Knative 是一个基于 Kubernetes 的，用于构建、部署和管理现代 serverless 应用的平台，是由IBM、Red Hat、谷歌等行业领导企业的工程师共同开发的。就目前来说，随着无服务器架构（serverless）普及率的持续增长，Knative 最有可能成为其标准。Knative 把路由（routing）和事件（eventing）的复杂性抽象出来，通过整合容器（或函数）构建、工作负载管理以及事件模型这三者来实现的这一 Serverless 标准。</p>
+<p>Knative 由三个核心组件组成：</p>
+<ul>
+<li>Build：主要负责从代码仓库获取源码并编译成镜像和推送到镜像仓库，并且所有这些操作都是在 Kubernetes Pod 中进行的。</li>
+<li>Eventing：提供了事件的接入、触发等一整套事件管理的能力，包括外部事件源的接入、事件注册和订阅、以及对事件的过滤等功能。事件模型可以有效的解耦生产者和消费者的依赖关系。生产者可以在消费者启动之前产生事件，消费者也可以在生产者启动之前监听事件。</li>
+<li>Serving：管理 Serverless 工作负载以对外提供服务，可以和事件很好的结合并且提供了基于请求驱动的自动扩缩的能力，而且在没有服务需要处理的时候可以缩容到零个实例，扩容边界可以支持到无限大，而且支持灰度发布。</li>
+</ul>
+<p>后面会基于实验逐个来讲解。首先我们要来安装一套环境，本文默认你已经安装了 Kubernetes 集群，所以从 istio 自定义安装开始讲，然后安装 knative 最后部署测试应用，并演示自动启动和回收。</p>
+<h3 id="1-安装-istio"><a href="#1-安装-istio" class="headerlink" title="1. 安装 istio"></a>1. 安装 istio</h3><p>1) 下载 Istio 并解压<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">export ISTIO_VERSION=1.1.7</span><br><span class="line">curl -L https://git.io/getLatestIstio | sh -</span><br><span class="line">cd istio-$&#123;ISTIO_VERSION&#125;</span><br></pre></td></tr></table></figure></p>
+<p>2) 运行以下命令安装 Istio CRDs<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done</span><br></pre></td></tr></table></figure></p>
+<p>3) 创建 istio-system 命名空间，并不启用自动注入 sidecar<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | kubectl apply -f -</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Namespace</span><br><span class="line">metadata:</span><br><span class="line">  name: istio-system</span><br><span class="line">  labels:</span><br><span class="line">    istio-injection: disabled</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure></p>
+<p>4) 刚开始接触 Knative 建议不要启用 Istio 自动注入 sidecar 功能，所以这里演示用最小化安装。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"># A lighter template, with just pilot/gateway.</span><br><span class="line"># Based on install/kubernetes/helm/istio/values-istio-minimal.yaml</span><br><span class="line">helm template --namespace=istio-system \</span><br><span class="line">  --set prometheus.enabled=false \</span><br><span class="line">  --set mixer.enabled=false \</span><br><span class="line">  --set mixer.policy.enabled=false \</span><br><span class="line">  --set mixer.telemetry.enabled=false \</span><br><span class="line">  `# Pilot doesn&apos;t need a sidecar.` \</span><br><span class="line">  --set pilot.sidecar=false \</span><br><span class="line">  --set pilot.resources.requests.memory=128Mi \</span><br><span class="line">  `# Disable galley (and things requiring galley).` \</span><br><span class="line">  --set galley.enabled=false \</span><br><span class="line">  --set global.useMCP=false \</span><br><span class="line">  `# Disable security / policy.` \</span><br><span class="line">  --set security.enabled=false \</span><br><span class="line">  --set global.disablePolicyChecks=true \</span><br><span class="line">  `# Disable sidecar injection.` \</span><br><span class="line">  --set sidecarInjectorWebhook.enabled=false \</span><br><span class="line">  --set global.proxy.autoInject=disabled \</span><br><span class="line">  --set global.omitSidecarInjectorConfigMap=true \</span><br><span class="line">  `# Set gateway pods to 1 to sidestep eventual consistency / readiness problems.` \</span><br><span class="line">  --set gateways.istio-ingressgateway.autoscaleMin=1 \</span><br><span class="line">  --set gateways.istio-ingressgateway.autoscaleMax=1 \</span><br><span class="line">  `# Set pilot trace sampling to 100%` \</span><br><span class="line">  --set pilot.traceSampling=100 \</span><br><span class="line">  install/kubernetes/helm/istio \</span><br><span class="line">  &gt; ./istio-lean.yaml</span><br><span class="line"></span><br><span class="line">kubectl apply -f istio-lean.yaml</span><br></pre></td></tr></table></figure></p>
+<p>5) 验证 istio 部署完成<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]# kubectl get pods -n istio-system</span><br><span class="line">NAME                                    READY   STATUS    RESTARTS   AGE</span><br><span class="line">istio-ingressgateway-767cb44c84-j7m69   1/1     Running   0          127m</span><br><span class="line">istio-pilot-67cb784b59-plc9p            1/1     Running   0          127m</span><br></pre></td></tr></table></figure></p>
+<h3 id="2-安装-Knative"><a href="#2-安装-Knative" class="headerlink" title="2. 安装 Knative"></a>2. 安装 Knative</h3><p>1) 首先使用 <code>knative.dev/crd-install=true</code> 标签安装 CRDs<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply --selector knative.dev/crd-install=true \</span><br><span class="line">   --filename https://github.com/knative/serving/releases/download/v0.9.0/serving.yaml \</span><br><span class="line">   --filename https://github.com/knative/eventing/releases/download/v0.9.0/release.yaml \</span><br><span class="line">   --filename https://github.com/knative/serving/releases/download/v0.9.0/monitoring.yaml</span><br></pre></td></tr></table></figure></p>
+<p>2) 安装 Knative 和所需要的依赖<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply --filename https://github.com/knative/serving/releases/download/v0.9.0/serving.yaml \</span><br><span class="line">   --filename https://github.com/knative/eventing/releases/download/v0.9.0/release.yaml \</span><br><span class="line">   --filename https://github.com/knative/serving/releases/download/v0.9.0/monitoring.yaml</span><br></pre></td></tr></table></figure></p>
+<p>3) 为集群所有节点添加标签以在各主机上放置 fluentd<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl label nodes --all beta.kubernetes.io/fluentd-ds-ready=&quot;true&quot;</span><br></pre></td></tr></table></figure></p>
+<p>4) 验证 knative 部署完成，并且你会发现默认会在 istio-system 里面安装 zipkin 作为 tracing，当然可以换用 jaeger<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubectl get pods --namespace knative-serving</span><br><span class="line">kubectl get pods --namespace knative-eventing</span><br><span class="line">kubectl get pods --namespace knative-monitoring</span><br></pre></td></tr></table></figure></p>
+<p>5) 下载两个客户端工具<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/ahmetb/kubectx/archive/v0.7.0.tar.gz</span><br><span class="line">tar -xzvf v0.7.0.tar.gz</span><br><span class="line">cd kubectx-0.7.0/</span><br><span class="line"># 用于切换进入 namespace，对比 oc project</span><br><span class="line">mv kubens /usr/local/bin/</span><br><span class="line"></span><br><span class="line">wget https://github.com/knative/client/releases/download/v0.2.0/kn-linux-amd64</span><br><span class="line"># kn 是 Knative 的客户端命令行项目，仍在开发过程中。</span><br><span class="line">mv kn-linux-amd64 /usr/local/bin/kn</span><br><span class="line">chmod +x /usr/local/bin/kn</span><br></pre></td></tr></table></figure></p>
+<h3 id="3-创建第一个服务"><a href="#3-创建第一个服务" class="headerlink" title="3. 创建第一个服务"></a>3. 创建第一个服务</h3><p>1) 创建命名空间 <code>knativetutorial</code> 以部署测试应用<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create namespace knativetutorial</span><br></pre></td></tr></table></figure></p>
+<p>2) 使用 kn 创建第一个 knative 服务。这个服务是一个产生连续斐波纳契数列的应用。它部署后将暴露出一个端口（endpoint），向这个端口发送GET请求，就会得到斐波纳契数列的前n个数字。其中n通过/之后的参数传入。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]#  kn service create --image docker.io/ibmcom/fib-knative fib-knative</span><br><span class="line">Service &apos;fib-knative&apos; successfully created in namespace &apos;knativetutorial&apos;.</span><br><span class="line">Waiting for service &apos;fib-knative&apos; to become ready ...</span><br><span class="line">timeout: service &apos;fib-knative&apos; not ready after 60 seconds</span><br><span class="line">[root@master01 ~]# kubectl get ksvc/fib-knative</span><br><span class="line">NAME          URL                                              LATESTCREATED       LATESTREADY         READY   REASON</span><br><span class="line">fib-knative   http://fib-knative.knativetutorial.example.com   fib-knative-xvvg9   fib-knative-xvvg9   True</span><br></pre></td></tr></table></figure></p>
+<p>3) 现在状态 ready 了，我们看下服务列表<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]#  kn service list -n knativetutorial</span><br><span class="line">NAME            URL                                                GENERATION   AGE   CONDITIONS   READY   REASON</span><br><span class="line">fib-knative     http://fib-knative.knativetutorial.example.com     1            30m   3 OK / 3     True</span><br><span class="line">helloworld-go   http://helloworld-go.knativetutorial.example.com   1            28m   3 OK / 3     True</span><br></pre></td></tr></table></figure></p>
+<p>此时，我们可以看到，第一个 knative 服务已经部署完成。</p>
+<p>4) 首先我们要知道 knative 是使用 istio 的 ingressgateway 作为服务网关的，由 ingressgateway 承接 knative 的南北流量，把用户的流量引入进来。用户发起的请求首先会打到 ingressgateway 上面，然后 Istio 通过 VirtualService 再把请求转发到具体的 Revision 上面。当然用户的流量还会经过 Knative 的 queue 容器才能真正转发到业务容器。</p>
+<p>查看 istio-ingressgateway 的 service 类型默认是 <code>LoadBalancer</code>, 我们这里没有，得修改为 <code>NodePort</code>。 </p>
+<p><img src="/img/knative-01/1.png" alt=""></p>
+<p>获取 istio-ingressgateway 的 nodeport。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]#  INGRESSGATEWAY=istio-ingressgateway</span><br><span class="line">[root@master01 ~]#  kubectl get svc $INGRESSGATEWAY --namespace istio-system</span><br><span class="line">NAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                                                                                                      AGE</span><br><span class="line">istio-ingressgateway   NodePort   10.104.40.148   &lt;none&gt;        15020:31407/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:32682/TCP,15030:31368/TCP,15031:31573/TCP,15032:32449/TCP,15443:31895/TCP   80m</span><br><span class="line">[root@master01 ~]#  export IP_ADDRESS=$(kubectl get node  --output &apos;jsonpath=&#123;.items[0].status.addresses[0].address&#125;&apos;):$(kubectl get svc $INGRESSGATEWAY --namespace istio-system   --output &apos;jsonpath=&#123;.spec.ports[?(@.port==80)].nodePort&#125;&apos;)</span><br></pre></td></tr></table></figure></p>
+<p>5) 查找 service 对应的 URL<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]#  kubectl get route helloworld-go  --output=custom-columns=NAME:.metadata.name,URL:.status.url</span><br><span class="line">NAME            URL</span><br><span class="line">helloworld-go   http://helloworld-go.knativetutorial.example.com</span><br><span class="line">[root@master01 ~]#  kubectl get route fib-knative --output=custom-columns=NAME:.metadata.name,URL:.status.url</span><br><span class="line">NAME          URL</span><br><span class="line">fib-knative   http://fib-knative.knativetutorial.example.com</span><br></pre></td></tr></table></figure></p>
+<p>6) 访问测试，观察Pod的自动回收和启动</p>
+<p>Knative服务，具体是由Kubernetes的Pod来实现的。作为Serverless的服务，当该服务在一定时间（大约为90秒钟）内不被调用时，Pod资源应该被回收；而再次调用时，Pod应该会自动启动。</p>
+<p>我们先来观察一个 Pod 的启动过程，使用 curl 命令来向 Knative 服务发送 HTTP GET 请求。有时第一次调用需要等上几十秒钟才能获得返回，这是因为承载该服务的Kubernetes Pod需要冷启动，耗费时间。可以重复调用第二次，观察结果不到一秒钟就能返回，这是因为Pod已经是活跃状态，不需要冷启动了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[root@master01 ~]# curl -H &quot;Host: helloworld-go.knativetutorial.example.com&quot; http://$&#123;IP_ADDRESS&#125;</span><br><span class="line">Hello Go Sample v1!</span><br><span class="line">[root@master01 ~]# curl -H &quot;Host: fib-knative.knativetutorial.example.com&quot; http://$&#123;IP_ADDRESS&#125;/5</span><br><span class="line">[1,1,2,3,5]</span><br></pre></td></tr></table></figure>
+<p>运行 <code>kubectl get pods --watch</code> 观察 pod 初始化及状态变化过程，可以看到一个全新的Pod被启动并运行了</p>
+<p><img src="/img/knative-01/2.png" alt=""></p>
+<p>现在我们来观察Pod的结束，请求成功并返回后，不再发送请求，直到Pod进入Terminating状态并消失。大约需要等90秒钟。但 knative 服务依然存在。</p>
+<p><img src="/img/knative-01/3.png" alt=""></p>
+
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="https://link.hhtjim.com/163/31460434.mp3">
+            </audio>
+            
+        </div>
+        
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
+
+
+    </div>
+    
+</div>
+
+
+    </div>
+</div>
+</body>
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+<script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
+<script src="/js/plugin.js"></script>
+<script src="/js/diaspora.js"></script>
+<link rel="stylesheet" href="/photoswipe/photoswipe.css">
+<link rel="stylesheet" href="/photoswipe/default-skin/default-skin.css">
+<script src="/photoswipe/photoswipe.min.js"></script>
+<script src="/photoswipe/photoswipe-ui-default.min.js"></script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Google Analytics -->
+<script type="text/javascript">
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-128257903-1', 'auto');
+  ga('send', 'pageview');
+</script>
+<!-- End Google Analytics -->
+
+
+</html>
