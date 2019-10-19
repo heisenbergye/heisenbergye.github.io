@@ -21,102 +21,63 @@
 </html>
 <body class="loading">
     <div id="loader"></div>
-    <div class="nav">
-    <ul id="menu-menu" class="menu">
-        
-        <li class="pview menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="/whoami/" title="Whoami" target="_blank" rel="noopener">Whoami</a>
-        </li>
-        
-        <li class="  menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="https://github.com/heisenbergye" title="Github" target="_blank" rel="noopener">Github</a>
-        </li>
-        
-        <li class="  menu-item menu-item-type-post_type menu-item-object-page">
-            <a href="https://twitter.com/HeisenbergYe" title="Twitter" target="_blank" rel="noopener">Twitter</a>
-        </li>
-        
-    </ul>
-    <p id="copyright">
-        &copy; 2019 Zhan Ye.
-        Powered by <a href="http://hexo.io/" title="Hexo" target="_blank" rel="noopener">Hexo</a>
-        Theme <a href="https://github.com/Fechin/hexo-theme-diaspora" title="Diaspora" target="_blank" rel="noopener">Diaspora</a>
-        by Fechin
-    </p>
-</div>
-
-<div id="container">
-    
-<div id="screen">
-    <div id="mark">
-        <div class="layer" data-depth="0.4">
-            <img src="/img/welcome-cover.jpg" id="cover" crossorigin="anonymous" width="1920" height="1080">
-        </div>
-    </div>
-    <div id="vibrant">
-        <svg viewbox="0 0 2880 1620" height="100%" preserveaspectratio="xMaxYMax slice">
-            <polygon opacity="0.7" points="2000,1620 0,1620 0,0 600,0 "/>
-        </svg>
-        <div></div>
-    </div>
-    <div id="header">
+    <div id="single">
+    <div id="top" style="display: block;">
+    <div class="bar" style="width: 0;"></div>
+    <a class="icon-home image-icon" href="javascript:;"></a>
+    <div title="播放/暂停" class="icon-play"></div>
+    <h3 class="subtitle">knative-03</h3>
+    <div class="social">
+        <!--<div class="like-icon">-->
+            <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
+        <!--</div>-->
         <div>
-            <a class="image-logo" href="/"></a>
-            <div class="icon-menu switchmenu"></div>
+            <div class="share">
+                <a title="获取二维码" class="icon-scan" href="javascript:;"></a>
+            </div>
+            <div id="qr"></div>
         </div>
     </div>
-    
-    <div id="post0">
-        <p>十月 20, 2019</p>
-        <h2><a href="/2019/10/20/knative-03/" title="knative-03" class="posttitle">knative-03</a></h2>
-        <p class="summary"></p>
-    </div>
-    
+    <div class="scrollbar"></div>
 </div>
+    <div class="section">
+        <div class="article">
+    <div class="main">
+        <h1 class="title">knative-03</h1>
+        <div class="stuff">
+            <span>十月 20, 2019</span>
+            
 
-    <div id="primary">
+        </div>
+        <div class="content markdown">
+            
+            <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
+            <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
+                <source type="audio/mpeg" src="">
+            </audio>
+            
+                <ul id="audio-list" style="display:none">
+                    
+                        <li title="0" data-url="http://link.hhtjim.com/163/1921832.mp3"></li>
+                    
+                        <li title="1" data-url="http://link.hhtjim.com/163/18658961.mp3"></li>
+                    
+                        <li title="2" data-url="http://link.hhtjim.com/163/461544127.mp3"></li>
+                    
+                </ul>
+            
+        </div>
         
-<div class="post">
-    <a href="/2018/11/01/ServiceMesh-Linkerd2-2/" title="ServiceMesh-初识Linkerd2.0(二)">
-        <img src="/img/cover3.jpeg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十一月 01, 2018</p>
-        <h3><a href="/2018/11/01/ServiceMesh-Linkerd2-2/" title="ServiceMesh-初识Linkerd2.0(二)" class="posttitle">ServiceMesh-初识Linkerd2.0(二)</a></h3>
-        <p>&nbsp;&nbsp;&nbsp;&nbsp; 上一节说到在Kubernetes中，Linkerd在原服务的pod中的运行一个sidecar容器作为透明...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2018/10/28/ServiceMesh-Linkerd2-1/" title="ServiceMesh-初识Linkerd2.0">
-        <img src="/img/cover2.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十月 28, 2018</p>
-        <h3><a href="/2018/10/28/ServiceMesh-Linkerd2-1/" title="ServiceMesh-初识Linkerd2.0" class="posttitle">ServiceMesh-初识Linkerd2.0</a></h3>
-        <p>一、 Linkerd 2.0 介绍&nbsp;&nbsp;&nbsp;&nbsp; 首先我们来看什么是 Service Mesh。根据Linkerd CE...</p>
-    </div>
-</div>
-
-
-<div class="post">
-    <a href="/2018/10/28/introduction/" title="前言">
-        <img src="/img/cover1.jpg" class="cover" width="680" height="440">
-    </a>
-    <div class="else">
-        <p>十月 28, 2018</p>
-        <h3><a href="/2018/10/28/introduction/" title="前言" class="posttitle">前言</a></h3>
-        <p>&#160; &#160; &#160; 小店从今儿起就算开张了，感谢光临，还请老板们多多关照，这后台流量数据就靠大家给捧场了。作为开篇嘛，选了当前较热的...</p>
-    </div>
-</div>
+    <div id="gitalk-container" class="comment link" data-ae="false" data-ci="a566df68895a557d503c" data-cs="2756428642d9693443e2959816f1d635827a91b0" data-r="heisenbergye.github.io" data-o="heisenbergye" data-a="heisenbergye" data-d="false">查看评论</div>
 
 
     </div>
     
 </div>
-<div id="preview"></div>
 
+
+    </div>
+</div>
 </body>
 <script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
 <script src="//lib.baomitu.com/jquery/1.8.3/jquery.min.js"></script>
