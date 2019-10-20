@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,"> 
+    <meta name="description" content="Heisenbergye,在上一节中我们在 Kubernetes 和 Istio 之上构建了 Knative，并部署了第一个 severless 应用，观察了当接收到请求时服务会运行起来，在停止发送请求后会自动将服务实例缩减,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -26,7 +26,7 @@
     <div class="bar" style="width: 0;"></div>
     <a class="icon-home image-icon" href="javascript:;"></a>
     <div title="播放/暂停" class="icon-play"></div>
-    <h3 class="subtitle">knative-03</h3>
+    <h3 class="subtitle">knative学习-03</h3>
     <div class="social">
         <!--<div class="like-icon">-->
             <!--<a href="javascript:;" class="likeThis active"><span class="icon-like"></span><span class="count">76</span></a>-->
@@ -43,28 +43,24 @@
     <div class="section">
         <div class="article">
     <div class="main">
-        <h1 class="title">knative-03</h1>
+        <h1 class="title">knative学习-03</h1>
         <div class="stuff">
             <span>十月 20, 2019</span>
             
+  <ul class="post-tags-list"><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/istio/">istio</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/knative/">knative</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/kubernetes/">kubernetes</a></li><li class="post-tags-list-item"><a class="post-tags-list-link" href="/tags/severless/">severless</a></li></ul>
+
 
         </div>
         <div class="content markdown">
-            
+            <p>本章讲点轻松的话题: 可观测性（Observability），即监控、日志与分布式追踪。去年的时候我还没看过文档，一直以为 knative 也是通过调用 Istio API 实现的 Observability，其实不是的，knative 提供这些能力，虽然也都差不多。</p>
+<p>• Logging: Elasticsearch &amp; Kibana, Stackdriver<br>• Monitoring: Prometheus &amp; Grafana<br>• Tracing: Zipkin, Jaeger</p>
+<p> Logging<br>• Request log<br>– tag: “requestlog.logentry.istio-system” • Configuration log<br>– kubernetes.labels.serving_knative_dev\/configuration: &lt;CONFIGURATION_NAME&gt;<br>• Revision log<br>– kubernetes.labels.serving_knative_dev\/revision: &lt;REVISION_NAME&gt;</p>
+<p>• Revision HTTP Requests: HTTP request count, latency, and size metrics per revision and per configuration<br>• Nodes: CPU, memory, network, and disk metrics at node level<br>• Pods: CPU, memory, and network metrics at pod level<br>• Deployment: CPU, memory, and network metrics aggregated at deployment level<br>• Istio, Mixer and Pilot: Detailed Istio mesh, Mixer, and Pilot metrics<br>• Kubernetes: Dashboards giving insights into cluster health, deployments, and capacity usage</p>
+
             <!--[if lt IE 9]><script>document.createElement('audio');</script><![endif]-->
             <audio id="audio" loop="1" preload="auto" controls="controls" data-autoplay="false">
-                <source type="audio/mpeg" src="">
+                <source type="audio/mpeg" src="https://link.hhtjim.com/163/26797847.mp3">
             </audio>
-            
-                <ul id="audio-list" style="display:none">
-                    
-                        <li title="0" data-url="http://link.hhtjim.com/163/1921832.mp3"></li>
-                    
-                        <li title="1" data-url="http://link.hhtjim.com/163/18658961.mp3"></li>
-                    
-                        <li title="2" data-url="http://link.hhtjim.com/163/461544127.mp3"></li>
-                    
-                </ul>
             
         </div>
         
