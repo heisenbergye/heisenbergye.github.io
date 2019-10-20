@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="google" content="notranslate">
     <meta name="keywords" content="cloudnative, Kubernetes, k8s, devops, cicd, service mesh, istio, linkerd, python,"> 
-    <meta name="description" content="Heisenbergye,在上一节中我们在 Kubernetes 和 Istio 之上构建了 Knative，并部署了第一个 severless 应用，观察了当接收到请求时服务会运行起来，在停止发送请求后会自动将服务实例缩减,"> 
+    <meta name="description" content="Heisenbergye,本章讲点轻松的话题: 可观测性（Observability），即监控、日志与分布式追踪。去年的时候我还没看过文档，一直以为 knative 也是通过调用 Istio API 实现的 Observab,"> 
     <meta name="author" content="Zhan Ye"> 
     <link rel="alternative" href="atom.xml" title="Heisenbergye的博客" type="application/atom+xml"> 
     <link rel="icon" href="/img/favicon.png"> 
@@ -134,7 +134,7 @@
 <p>可以替换configmap中的域名 <code>example.com</code>，例如我们让 Route 使用域名 <code>mydomain.com</code>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">data:</span><br><span class="line">  mydomain.com: &quot;&quot;</span><br><span class="line">kind: ConfigMap</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure></p>
 <p>Route 调用 istio 的 API 去实现网络分发，那他是怎么做的呢？Controller 根据 Route 创建了 virtualservice 定义了内外部访问的路由策略。<br><img src="/img/knative-02/virtualservice.png" alt=""></p>
 <p>那这个带有 <code>-mesh</code> 的 virtualservice 是做什么的呢？我们说默认 knative 默认是用 Istio 网关服务 <code>istio-ingressgateway</code> ,那这个是在哪里指定的呢？<br><img src="/img/knative-02/virtualservice-mesh.png" alt=""></p>
-<p>首先我们找到 <code>config-istio</code> 这个 configmap，里面定义了 knative v0.3 以后使用 <code>istio-ingressgateway</code> 作为 knative 默认网关，他提供了一个外部可访问的 public url。而 <code>cluster-local-gateway</code> 正好是我们不想让一些服务被外部访问到是使用，只能在集群内部被访问，需要在安装 istio 的时候安装，但我们一开始没安装，演示也暂时不会用到。<br><img src="/img/knative-02/config-istio.png" alt=""></p>
+<p>首先我们找到 <code>config-istio</code> 这个 configmap，里面定义了 knative v0.3 以后使用 <code>istio-ingressgateway</code> 作为 knative 默认网关，他提供了一个外部可访问的 public url。而 <code>cluster-local-gateway</code> 正好是我们不想让一些服务被外部访问到是使用，只能在集群内部被访问，但我们一开始没安装，演示也暂时不会用到，需要的话可以后装。<br><img src="/img/knative-02/config-istio.png" alt=""></p>
 <p>也正因为 ConfigMap <code>config-istio</code> ，于是就有了这个两个对应的 gateway。knative 就是在这里调用了 istio gateway 的网络能力。<br><img src="/img/knative-02/knative-ingress-gateway.png" alt=""><br><img src="/img/knative-02/cluster-local-gateway.png" alt=""></p>
 <p>最后基于 helloworld-go 这个 Service 演示创建新的 Configuration 和 Route 并定义 traffic 分发流量到两个不同的 Revision。如图所示，定义新的 revision <code>helloworld-go-2</code>,为区别修改环境变量的值为<code>v2</code>,添加 traffic 定义路由规则，给前一个 Revision 分配 30% 的权重，新的 Revision 分配 70%。</p>
 <p><img src="/img/knative-02/traffic.png" alt=""></p>
