@@ -10,6 +10,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@master
     - name: Clean
       uses: heisenbergye/heisenbergye.github.io@master
       with:
